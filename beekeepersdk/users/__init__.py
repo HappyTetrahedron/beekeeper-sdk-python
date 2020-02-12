@@ -122,8 +122,6 @@ class User:
     def get_custom_fields(self):
         return [CustomField(raw_data=customfield) for customfield in self._raw.get("custom_fields")]
 
-    # TODO tons of setters for PUT user
-
 
 class CustomField:
     def __init__(self, raw_data=None):
