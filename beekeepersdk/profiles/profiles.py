@@ -52,8 +52,7 @@ class ProfileWrapper:
         self._raw = raw_data or {}
 
     def get_user(self):
-        # TODO I think this is different from the User object
-        return User(self.sdk, raw_data=self._raw.get("user"))
+        return Profile(self.sdk, raw_data=self._raw.get("user"))
 
 
 class Profile:

@@ -33,16 +33,14 @@ class ConversationApi:
         response = self.sdk.get(API_ENDPOINT, query=query)
         return [Conversation(self.sdk, raw_data=conversation) for conversation in response]
 
-    def create_new_conversation(self, conversation_name, user_ids, message, group_image=None,
+    def create_new_conversation(self, conversation_name, user_ids, group_image=None,
                                 conversation_type=CONVERSATION_TYPE_GROUP):
-        real_message = self._messageify(message)
-        new_conversation = {"name": conversation_name, "user_ids": user_ids, "text": real_message.get_text()}
+        new_conversation = {"name": conversation_name, "user_ids": user_ids}
 
         if conversation_type:
             new_conversation["conversation_type"] = conversation_type
         if group_image:
             new_conversation["group_image"] = group_image
-        # TODO support photos, media, addons, files
 
         response = self.sdk.post(API_ENDPOINT, payload=new_conversation)
         return Conversation(self.sdk, response)
