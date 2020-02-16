@@ -12,7 +12,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/beekpr/beekeeper-sdk-python",
-    install_requires=['beekeeper_sdk'],
+    install_requires=['beekeeper_sdk', 'pubnub', 'cryptography'],
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
