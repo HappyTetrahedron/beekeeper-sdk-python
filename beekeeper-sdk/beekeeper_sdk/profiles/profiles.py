@@ -1,4 +1,4 @@
-from beekeepersdk.users import User
+from beekeeper_sdk.users import User
 
 API_ENDPOINT = "profiles"
 

@@ -1,10 +1,10 @@
 import requests
 
-from beekeepersdk.conversations import ConversationApi
-from beekeepersdk.files import FileApi
-from beekeepersdk.streams import StreamApi
-from beekeepersdk.profiles import ProfileApi
-from beekeepersdk.users import UserApi
+from .conversations.conversations import ConversationApi
+from .files.files import FileApi
+from .streams.streams import StreamApi
+from .profiles.profiles import ProfileApi
+from .users.users import UserApi
 
 
 class BeekeeperSDK:

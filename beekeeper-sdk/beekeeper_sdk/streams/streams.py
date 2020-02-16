@@ -1,4 +1,4 @@
-from beekeepersdk.files import FileData
+from beekeeper_sdk.files import FileData
 
 STREAM_API_ENDPOINT = "streams"
 POST_API_ENDPOINT = "posts"

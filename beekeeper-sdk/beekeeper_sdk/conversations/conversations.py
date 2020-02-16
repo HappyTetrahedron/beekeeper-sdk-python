@@ -1,4 +1,4 @@
-from beekeepersdk.files import FileData
+from beekeeper_sdk.files import FileData
 
 API_ENDPOINT = "conversations"
 MESSAGES_ENDPOINT = "messages"
