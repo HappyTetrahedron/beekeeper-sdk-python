@@ -18,57 +18,58 @@ USER_SORT_ASCENDING = "asc"
 USER_SORT_DESCENDING = "desc"
 
 
-def get_users(
-        sdk,
-        sort=None,
-        q=None,
-        include_bots=None,
-        limit=None,
-        offset=None,
-        include_self=None,
-        exclude_users_which_never_logged_in=None
-):
-    query = {}
-    if sort is not None:
-        query["sort"] = sort
-    if q is not None:
-        query["q"] = q
-    if include_bots is not None:
-        query["include_bots"] = include_bots
-    if include_self is not None:
-        query["include_self"] = include_self
-    if exclude_users_which_never_logged_in is not None:
-        query["exclude_users_which_never_logged_in"] = exclude_users_which_never_logged_in
-    if limit:
-        query["limit"] = limit
-    if offset is not None:
-        query["offset"] = offset
-    response = sdk.get(API_ENDPOINT, query=query)
-    return [User(raw_data=user) for user in response]
+class UserApi:
+    def __init__(self, sdk):
+        self.sdk = sdk
 
+    def get_users(
+            self,
+            sort=None,
+            q=None,
+            include_bots=None,
+            limit=None,
+            offset=None,
+            include_self=None,
+            exclude_users_which_never_logged_in=None
+    ):
+        query = {}
+        if sort is not None:
+            query["sort"] = sort
+        if q is not None:
+            query["q"] = q
+        if include_bots is not None:
+            query["include_bots"] = include_bots
+        if include_self is not None:
+            query["include_self"] = include_self
+        if exclude_users_which_never_logged_in is not None:
+            query["exclude_users_which_never_logged_in"] = exclude_users_which_never_logged_in
+        if limit:
+            query["limit"] = limit
+        if offset is not None:
+            query["offset"] = offset
+        response = self.sdk.get(API_ENDPOINT, query=query)
+        return [User(self.sdk, raw_data=user) for user in response]
 
-def get_user(sdk, user_id):
-    response = sdk.get(API_ENDPOINT, user_id)
-    return User(raw_data=response)
+    def get_user(self, user_id):
+        response = self.sdk.get(API_ENDPOINT, user_id)
+        return User(self.sdk, raw_data=response)
 
+    def get_user_by_username(self, username):
+        response = self.sdk.get(API_ENDPOINT, "by_name", username)
+        return User(self.sdk, raw_data=response)
 
-def get_user_by_username(sdk, username):
-    response = sdk.get(API_ENDPOINT, "by_name", username)
-    return User(raw_data=response)
+    def get_user_by_tenantuserid(self, tenantuserid):
+        response = self.sdk.get(API_ENDPOINT, "by_tenant_user_id", tenantuserid)
+        return User(self.sdk, raw_data=response)
 
-
-def get_user_by_tenantuserid(sdk, tenantuserid):
-    response = sdk.get(API_ENDPOINT, "by_tenant_user_id", tenantuserid)
-    return User(raw_data=response)
-
-
-def delete_user(sdk, user_id):
-    response = sdk.delete(API_ENDPOINT, user_id)
-    return response.get("status") == "OK"
+    def delete_user(self, user_id):
+        response = self.sdk.delete(API_ENDPOINT, user_id)
+        return response.get("status") == "OK"
 
 
 class User:
-    def __init__(self, raw_data=None):
+    def __init__(self, sdk, raw_data=None):
+        self.sdk = sdk
         self._raw = raw_data or {}
 
     def get_id(self):
@@ -120,11 +121,12 @@ class User:
         return self._raw.get("avatar")
 
     def get_custom_fields(self):
-        return [CustomField(raw_data=customfield) for customfield in self._raw.get("custom_fields")]
+        return [CustomField(self.sdk, raw_data=customfield) for customfield in self._raw.get("custom_fields")]
 
 
 class CustomField:
-    def __init__(self, raw_data=None):
+    def __init__(self, sdk, raw_data=None):
+        self.sdk = sdk
         self._raw = raw_data or {}
 
     def get_label(self):
@@ -139,7 +141,3 @@ class CustomField:
 
     def get_type(self):
         return self._raw.get("type")
-
-    def get_label(self):
-        return self._raw.get("label")
-

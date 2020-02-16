@@ -17,112 +17,106 @@ CONVERSATION_TYPE_ONE_ON_ONE = "one_on_one"
 CONVERSATION_TYPE_GROUP = "group"
 
 
-def get_conversations(sdk, folder=None, limit=None, before=None):
-    query = {}
-    if folder is not None:
-        query["folder"] = folder
-    if limit:
-        query["limit"] = limit
-    if before is not None:
-        query["before"] = before
-    response = sdk.get(API_ENDPOINT, query=query)
-    return [Conversation(raw_data=conversation) for conversation in response]
+class ConversationApi:
 
+    def __init__(self, sdk):
+        self.sdk = sdk
 
-def create_new_conversation(sdk, conversation_name, user_ids, message, group_image=None,
-                            conversation_type=CONVERSATION_TYPE_GROUP):
-    real_message = _messageify(message)
-    new_conversation = {"name": conversation_name, "user_ids": user_ids, "text": real_message.get_text()}
+    def get_conversations(self, folder=None, limit=None, before=None):
+        query = {}
+        if folder is not None:
+            query["folder"] = folder
+        if limit:
+            query["limit"] = limit
+        if before is not None:
+            query["before"] = before
+        response = self.sdk.get(API_ENDPOINT, query=query)
+        return [Conversation(self.sdk, raw_data=conversation) for conversation in response]
 
-    if conversation_type:
-        new_conversation["conversation_type"] = conversation_type
-    if group_image:
-        new_conversation["group_image"] = group_image
-    # TODO support photos, media, addons, files
+    def create_new_conversation(self, conversation_name, user_ids, message, group_image=None,
+                                conversation_type=CONVERSATION_TYPE_GROUP):
+        real_message = self._messageify(message)
+        new_conversation = {"name": conversation_name, "user_ids": user_ids, "text": real_message.get_text()}
 
-    response = sdk.post(API_ENDPOINT, payload=new_conversation)
-    return Conversation(response)
+        if conversation_type:
+            new_conversation["conversation_type"] = conversation_type
+        if group_image:
+            new_conversation["group_image"] = group_image
+        # TODO support photos, media, addons, files
 
+        response = self.sdk.post(API_ENDPOINT, payload=new_conversation)
+        return Conversation(self.sdk, response)
 
-def get_conversation(sdk, conversation_id):
-    response = sdk.get(API_ENDPOINT, conversation_id)
-    return Conversation(raw_data=response)
+    def get_conversation(self, conversation_id):
+        response = self.sdk.get(API_ENDPOINT, conversation_id)
+        return Conversation(self.sdk, raw_data=response)
 
+    def get_conversation_by_user(self, user_id):
+        response = self.sdk.get(API_ENDPOINT, "by_user", user_id)
+        return Conversation(self.sdk, raw_data=response)
 
-def get_conversation_by_user(sdk, user_id):
-    response = sdk.get(API_ENDPOINT, "by_user", user_id)
-    return Conversation(raw_data=response)
+    def send_message_to_conversation(self, conversation_id, message):
+        real_message = self._messageify(message)
+        response = self.sdk.post(API_ENDPOINT, conversation_id, MESSAGES_ENDPOINT,
+                                 payload=real_message._raw)
+        return ConversationMessage(self.sdk, raw_data=response)
 
+    def leave_conversation(self, conversation_id):
+        response = self.sdk.post(API_ENDPOINT, conversation_id, "leave")
+        return response.get("status") == "OK"
 
-def send_message_to_conversation(sdk, conversation_id, message):
-    real_message = _messageify(message)
-    response = sdk.post(API_ENDPOINT, conversation_id, MESSAGES_ENDPOINT,
-                        payload=real_message._raw)
-    return ConversationMessage(raw_data=response)
+    def archive_conversation(self, conversation_id):
+        response = self.sdk.post(API_ENDPOINT, conversation_id, "archive")
+        return Conversation(self.sdk, raw_data=response)
 
+    def un_archive_conversation(self, conversation_id):
+        response = self.sdk.delete(API_ENDPOINT, conversation_id, "archive")
+        return Conversation(self.sdk, raw_data=response)
 
-def leave_conversation(sdk, conversation_id):
-    response = sdk.post(API_ENDPOINT, conversation_id, "leave")
-    return response.get("status") == "OK"
+    def add_user_to_conversation(self, conversation_id, user_id, role=USER_ROLE_MEMBER):
+        body = {"role": role}
+        response = self.sdk.put(API_ENDPOINT, conversation_id, "members", user_id,
+                                payload=body)
+        return ConversationMember(self.sdk, raw_data=response)
 
+    def remove_user_from_conversation(self, conversation_id, user_id):
+        response = self.sdk.delete(API_ENDPOINT, conversation_id, "members", user_id)
+        return response.get("status") == "OK"
 
-def archive_conversation(sdk, conversation_id):
-    response = sdk.post(API_ENDPOINT, conversation_id, "archive")
-    return Conversation(raw_data=response)
+    def get_members_of_conversation(self, conversation_id, include_suspended=None, limit=None, offset=None):
+        query = {}
+        if include_suspended is not None:
+            query["include_suspended"] = include_suspended
+        if limit:
+            query["limit"] = limit
+        if offset is not None:
+            query["offset"] = offset
+        response = self.sdk.get(API_ENDPOINT, conversation_id, "members", query=query)
+        return [ConversationMember(self.sdk, raw_data=member) for member in response]
 
+    def get_messages_of_conversation(self, conversation_id, after=None, before=None, limit=None, message_id=None):
+        query = {}
+        if message_id is not None:
+            query["message_id"] = message_id
+        if limit:
+            query["limit"] = limit
+        if after is not None:
+            query["after"] = after
+        if before is not None:
+            query["before"] = before
+        response = self.sdk.get(API_ENDPOINT, conversation_id, MESSAGES_ENDPOINT, query=query)
+        return [ConversationMessage(self.sdk, raw_data=message) for message in response]
 
-def un_archive_conversation(sdk, conversation_id):
-    response = sdk.delete(API_ENDPOINT, conversation_id, "archive")
-    return Conversation(raw_data=response)
-
-
-def add_user_to_conversation(sdk, conversation_id, user_id, role=USER_ROLE_MEMBER):
-    body = {"role": role}
-    response = sdk.put(API_ENDPOINT, conversation_id, "members", user_id,
-                       payload=body)
-    return ConversationMember(raw_data=response)
-
-
-def remove_user_from_conversation(sdk, conversation_id, user_id):
-    response = sdk.delete(API_ENDPOINT, conversation_id, "members", user_id)
-    return response.get("status") == "OK"
-
-
-def get_members_of_conversation(sdk, conversation_id, include_suspended=None, limit=None, offset=None):
-    query = {}
-    if include_suspended is not None:
-        query["include_suspended"] = include_suspended
-    if limit:
-        query["limit"] = limit
-    if offset is not None:
-        query["offset"] = offset
-    response = sdk.get(API_ENDPOINT, conversation_id, "members", query=query)
-    return [ConversationMember(raw_data=member) for member in response]
-
-
-def get_messages_of_conversation(sdk, conversation_id, after=None, before=None, limit=None, message_id=None):
-    query = {}
-    if message_id is not None:
-        query["message_id"] = message_id
-    if limit:
-        query["limit"] = limit
-    if after is not None:
-        query["after"] = after
-    if before is not None:
-        query["before"] = before
-    response = sdk.get(API_ENDPOINT, conversation_id, MESSAGES_ENDPOINT, query=query)
-    return [ConversationMessage(raw_data=message) for message in response]
-
-
-def _messageify(message_or_string):
-    if isinstance(message_or_string, str):
-        return ConversationMessage(text=message_or_string)
-    return message_or_string
+    def _messageify(self, message_or_string):
+        if isinstance(message_or_string, str):
+            return ConversationMessage(self.sdk, text=message_or_string)
+        return message_or_string
 
 
 class ConversationMessage:
     def __init__(
             self,
+            sdk,
             raw_data=None,
             text=None,
             message_type=None,
@@ -131,6 +125,7 @@ class ConversationMessage:
             addons=None,
 
     ):
+        self.sdk = sdk
         self._raw = raw_data or {}
         if text:
             self._raw["text"] = text
@@ -170,20 +165,21 @@ class ConversationMessage:
         return self._raw.get("created")
 
     def get_files(self):
-        return [FileData(raw_data=file) for file in self._raw.get("files", [])]
+        return [FileData(self.sdk, raw_data=file) for file in self._raw.get("files", [])]
 
     def get_media(self):
-        return [FileData(raw_data=file) for file in self._raw.get("media", [])]
+        return [FileData(self.sdk, raw_data=file) for file in self._raw.get("media", [])]
 
     def get_addons(self):
-        return [ConversationMessageAddon(raw_data=addon) for addon in self._raw.get("addons", [])]
+        return [ConversationMessageAddon(self.sdk, raw_data=addon) for addon in self._raw.get("addons", [])]
 
-    def reply(self, sdk, message):
-        send_message_to_conversation(sdk, self.get_conversation_id(), message)
+    def reply(self, message):
+        self.sdk.conversations.send_message_to_conversation(self.get_conversation_id(), message)
 
 
 class Conversation:
-    def __init__(self, raw_data=None):
+    def __init__(self, sdk, raw_data=None):
+        self.sdk = sdk
         self._raw = raw_data or {}
 
     def get_type(self):
@@ -216,47 +212,48 @@ class Conversation:
     def get_folder(self):
         return self._raw.get("folder")
 
-    def send_message(self, sdk, message):
-        return send_message_to_conversation(sdk, self.get_id(), message)
+    def send_message(self, message):
+        return self.sdk.conversations.send_message_to_conversation(self.get_id(), message)
 
-    def change_name(self, sdk, new_name):
+    def change_name(self, new_name):
         self._raw["name"] = new_name
-        return self._save(sdk)
+        return self._save()
 
-    def change_avatar(self, sdk, new_avatar):
+    def change_avatar(self, new_avatar):
         self._raw["avatar"] = new_avatar
-        return self._save(sdk)
+        return self._save()
 
-    def leave(self, sdk):
-        return leave_conversation(sdk, self.get_id())
+    def leave(self):
+        return self.sdk.conversations.leave_conversation(self.get_id())
 
-    def archive(self, sdk):
-        return archive_conversation(sdk, self.get_id())
+    def archive(self):
+        return self.sdk.conversations.archive_conversation(self.get_id())
 
-    def un_archive(self, sdk):
-        return un_archive_conversation(sdk, self.get_id())
+    def un_archive(self):
+        return self.sdk.conversations.un_archive_conversation(self.get_id())
 
-    def add_user(self, sdk, user_id, role=USER_ROLE_MEMBER):
-        return add_user_to_conversation(sdk, self.get_id(), user_id, role=role)
+    def add_user(self, user_id, role=USER_ROLE_MEMBER):
+        return self.sdk.conversations.add_user_to_conversation(self.get_id(), user_id, role=role)
 
-    def remove_user(self, sdk, user_id):
-        return remove_user_from_conversation(sdk, self.get_id(), user_id)
+    def remove_user(self, user_id):
+        return self.sdk.conversations.remove_user_from_conversation(self.get_id(), user_id)
 
-    def retrieve_members(self, sdk, include_suspended=None, limit=None, offset=None):
-        return get_members_of_conversation(sdk, self.get_id(), include_suspended, limit, offset)
+    def retrieve_members(self, include_suspended=None, limit=None, offset=None):
+        return self.sdk.conversations.get_members_of_conversation(self.get_id(), include_suspended, limit, offset)
 
-    def retrieve_messages(self, sdk, after=None, before=None, limit=None, message_id=None):
-        return get_messages_of_conversation(sdk, self.get_id(), after, before, limit, message_id)
+    def retrieve_messages(self, after=None, before=None, limit=None, message_id=None):
+        return self.sdk.conversations.get_messages_of_conversation(self.get_id(), after, before, limit, message_id)
 
-    def _save(self, sdk):
-        response = sdk.put(API_ENDPOINT, self.get_id(),
+    def _save(self):
+        response = self.sdk.put(API_ENDPOINT, self.get_id(),
                            payload=self._raw)
         self._raw = response
         return self
 
 
 class ConversationMember:
-    def __init__(self, raw_data=None):
+    def __init__(self, sdk, raw_data=None):
+        self.sdk = sdk
         self._raw = raw_data or {}
 
     def get_role(self):
@@ -268,18 +265,21 @@ class ConversationMember:
 
 
 class ConversationMessageInfo:
-    def __init__(self, raw_data=None):
+    def __init__(self, sdk, raw_data=None):
+        self.sdk = sdk
         self._raw = raw_data or {}
 
     def get_message(self):
-        return ConversationMessage(raw_data=self._raw.get("message"))
+        return ConversationMessage(self.sdk, raw_data=self._raw.get("message"))
 
     def get_message_receipts(self):
-        return [ConversationMessageReceipt(raw_data=receipt) for receipt in self._raw.get("message_receipts", [])]
+        return [ConversationMessageReceipt(self.sdk, raw_data=receipt)
+                for receipt in self._raw.get("message_receipts", [])]
 
 
 class ConversationMessageReceipt:
-    def __init__(self, raw_data=None):
+    def __init__(self, sdk, raw_data=None):
+        self.sdk = sdk
         self._raw = raw_data or {}
 
     def get_id(self):
@@ -303,7 +303,8 @@ class ConversationMessageReceipt:
 
 
 class ConversationMessageAddon:
-    def __init__(self, raw_data=None):
+    def __init__(self, sdk, raw_data=None):
+        self.sdk = sdk
         self._raw = raw_data or {}
 
     def get_type(self):

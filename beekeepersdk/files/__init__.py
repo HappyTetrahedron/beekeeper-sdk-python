@@ -31,67 +31,69 @@ FILE_UPLOAD_TYPE_VOICE = "voice"
 mime = magic.Magic(mime=True)
 
 
-def upload_photo_from_path(sdk, file_path):
-    return upload_file_from_path(sdk, file_path, upload_type=FILE_UPLOAD_TYPE_PHOTO)
+class FileApi:
 
+    def __init__(self, sdk):
+        self.sdk = sdk
 
-def upload_photo(sdk, file, mime_type=None, file_name=None):
-    return upload_file(sdk, file, mime_type=mime_type, file_name=file_name, upload_type=FILE_UPLOAD_TYPE_PHOTO)
+    def upload_photo_from_path(self, file_path):
+        return self.sdk.files.upload_file_from_path(file_path, upload_type=FILE_UPLOAD_TYPE_PHOTO)
 
+    def upload_photo(self, file, mime_type=None, file_name=None):
+        return self.upload_file(file, mime_type=mime_type, file_name=file_name, upload_type=FILE_UPLOAD_TYPE_PHOTO)
 
-def upload_file_from_path(sdk, file_path, upload_type=FILE_UPLOAD_TYPE_FILE):
-    mime_type = mime.from_file(file_path)
-    file_name = os.path.basename(file_path)
-    with open(file_path, 'rb') as file:
-        return upload_file(sdk, file, upload_type=upload_type, mime_type=mime_type, file_name=file_name)
+    def upload_file_from_path(self, file_path, upload_type=FILE_UPLOAD_TYPE_FILE):
+        mime_type = mime.from_file(file_path)
+        file_name = os.path.basename(file_path)
+        with open(file_path, 'rb') as file:
+            return self.upload_file(file, upload_type=upload_type, mime_type=mime_type, file_name=file_name)
 
+    def upload_file(self, file, upload_type=FILE_UPLOAD_TYPE_FILE, mime_type=None, file_name=None):
+        token = self.sdk.get(API_ENDPOINT, upload_type, "upload", "token")
+        form_data = {}
+        file_content = file.read()
 
-def upload_file(sdk, file, upload_type=FILE_UPLOAD_TYPE_FILE, mime_type=None, file_name=None):
-    token = sdk.get(API_ENDPOINT, upload_type, "upload", "token")
-    form_data = {}
-    file_content = file.read()
+        if not mime_type:
+            mime_type = mime.from_buffer(file_content)
+        if not file_name:
+            file_name = "file"
 
-    if not mime_type:
-        mime_type = mime.from_buffer(file_content)
-    if not file_name:
-        file_name = "file"
+        for form_param in token.get("additional_form_data", []):
+            form_data[form_param["name"]] = form_param["value"]
+        form_data[token["file_param_name"]] = file_content
 
-    for form_param in token.get("additional_form_data", []):
-        form_data[form_param["name"]] = form_param["value"]
-    form_data[token["file_param_name"]] = file_content
+        response = requests.post(token["upload_url"], files=form_data)
 
-    response = requests.post(token["upload_url"], files=form_data)
+        if token.get("registration_required", False):
+            if token["upload_response_data_type"] == "xml":
+                parsed_response = ElementTree.fromstring(response.content)
+                file_key = parsed_response.find("Key").text
+            else:
+                raise ValueError("Did not receive expected content type for file upload")
 
-    if token.get("registration_required", False):
-        if token["upload_response_data_type"] == "xml":
-            parsed_response = ElementTree.fromstring(response.content)
-            file_key = parsed_response.find("Key").text
+            registration_payload = {
+                "media_type": mime_type,
+                "key": file_key,
+                "size": len(file_content),
+                "name": file_name,
+            }
+
+            response = self.sdk.post(API_ENDPOINT, upload_type, "upload", payload=registration_payload)
+            return FileData(self.sdk, raw_data=response)
         else:
-            raise ValueError("Did not receive expected content type for file upload")
+            if token["upload_response_data_type"] == "json":
+                return FileData(self.sdk, raw_data=response.json())
+            else:
+                raise ValueError("Did not receive expected content type for file upload")
 
-        registration_payload = {
-            "media_type": mime_type,
-            "key": file_key,
-            "size": len(file_content),
-            "name": file_name,
-        }
-
-        response = sdk.post(API_ENDPOINT, upload_type, "upload", payload=registration_payload)
-        return FileData(response)
-    else:
-        if token["upload_response_data_type"] == "json":
-            return FileData(response.json())
-        else:
-            raise ValueError("Did not receive expected content type for file upload")
-
-
-def get_presigned_url_for(sdk, file_url):
-    # TODO validate url
-    return sdk.follow_redirect(file_url)
+    def get_presigned_url_for(self, file_url):
+        # TODO validate url
+        return self.sdk.follow_redirect(file_url)
 
 
 class FileData:
-    def __init__(self, raw_data=None):
+    def __init__(self, sdk, raw_data=None):
+        self.sdk = sdk
         self._raw = raw_data or {}
 
     def get_name(self):
@@ -113,14 +115,15 @@ class FileData:
         return self._raw.get("id")
 
     def get_versions(self):
-        return [FileVersion(raw_data=version) for version in self._raw.get("versions", [])]
+        return [FileVersion(self.sdk, raw_data=version) for version in self._raw.get("versions", [])]
 
-    def retrieve_presigned_url(self, sdk):
-        return get_presigned_url_for(sdk, self.get_url())
+    def retrieve_presigned_url(self):
+        return self.sdk.files.get_presigned_url_for(self.get_url())
 
 
 class FileVersion:
-    def __init__(self, raw_data=None):
+    def __init__(self, sdk, raw_data=None):
+        self.sdk = sdk
         self._raw = raw_data or {}
 
     def get_name(self):
@@ -136,4 +139,4 @@ class FileVersion:
         return self._raw.get("height")
 
     def retrieve_presigned_url(self, sdk):
-        return get_presigned_url_for(sdk, self.get_url())
+        return self.sdk.files.get_presigned_url_for(sdk, self.get_url())

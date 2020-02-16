@@ -1,5 +1,11 @@
 import requests
 
+from beekeepersdk.conversations import ConversationApi
+from beekeepersdk.files import FileApi
+from beekeepersdk.posts import PostApi
+from beekeepersdk.profiles import ProfileApi
+from beekeepersdk.users import UserApi
+
 
 class BeekeeperSDK:
 
@@ -9,6 +15,11 @@ class BeekeeperSDK:
         # TODO  validate arguments
         self.tenant_url = tenant_url
         self.api_token = api_token
+        self.conversations = ConversationApi(self)
+        self.files = FileApi(self)
+        self.posts = PostApi(self)
+        self.profiles = ProfileApi(self)
+        self.users = UserApi(self)
 
         self.auth_header = {"Authorization": "Token {}".format(self.api_token)}
 

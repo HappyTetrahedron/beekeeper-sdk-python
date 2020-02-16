@@ -8,85 +8,77 @@ LIKES_ENDPOINT = "likes"
 COMMENTS_API_ENDPOINT = "comments"
 
 
-def get_post(sdk, post_id):
-    response = sdk.get(POST_API_ENDPOINT, post_id)
-    return Post(raw_data=response)
+class PostApi:
 
+    def __init__(self, sdk):
+        self.sdk = sdk
 
-def delete_post(sdk, post_id):
-    response = sdk.delete(POST_API_ENDPOINT, post_id)
-    return response.get("status") == "OK"
+    def get_post(self, post_id):
+        response = self.sdk.get(POST_API_ENDPOINT, post_id)
+        return Post(self.sdk, raw_data=response)
 
+    def delete_post(self, post_id):
+        response = self.sdk.delete(POST_API_ENDPOINT, post_id)
+        return response.get("status") == "OK"
 
-def create_post(sdk, stream_id, post):
-    real_post = _postify(post)
-    real_post._raw["streamid"] = stream_id
-    response = sdk.post(POST_API_ENDPOINT,
-                        payload=real_post._raw)
-    return Post(raw_data=response)
+    def create_post(self, stream_id, post):
+        real_post = self._postify(post)
+        real_post._raw["streamid"] = stream_id
+        response = self.sdk.post(POST_API_ENDPOINT,
+                                 payload=real_post._raw)
+        return Post(self.sdk, raw_data=response)
 
+    def get_post_comments(self, post_id):
+        response = self.sdk.get(POST_API_ENDPOINT, post_id, COMMENTS_ENDPOINT)
+        return [PostComment(self.sdk, raw_data=comment) for comment in response]
 
-def get_post_comments(sdk, post_id):
-    response = sdk.get(POST_API_ENDPOINT, post_id, COMMENTS_ENDPOINT)
-    return [PostComment(raw_data=comment) for comment in response]
+    def comment_on_post(self, post_id, comment):
+        real_comment = self._commentify(comment)
+        response = self.sdk.post(POST_API_ENDPOINT, post_id, COMMENTS_ENDPOINT,
+                                 payload=real_comment._raw)
+        return PostComment(self.sdk, raw_data=response)
 
+    def delete_comment(self, comment_id):
+        response = self.sdk.delete(COMMENTS_API_ENDPOINT, comment_id)
+        return response.get("status") == "OK"
 
-def comment_on_post(sdk, post_id, comment):
-    real_comment = _commentify(comment)
-    response = sdk.post(POST_API_ENDPOINT, post_id, COMMENTS_ENDPOINT,
-                        payload=real_comment._raw)
-    return PostComment(raw_data=response)
+    def like_post(self, post_id):
+        response = self.sdk.post(POST_API_ENDPOINT, post_id, SIMPLE_LIKE_ENDPOINT)
+        return Post(self.sdk, raw_data=response)
 
+    def unlike_post(self, post_id):
+        response = self.sdk.delete(POST_API_ENDPOINT, post_id, SIMPLE_LIKE_ENDPOINT)
+        return Post(self.sdk, raw_data=response)
 
-def delete_comment(sdk, comment_id):
-    response = sdk.delete(COMMENTS_API_ENDPOINT, comment_id)
-    return response.get("status") == "OK"
+    def like_comment(self, comment_id):
+        response = self.sdk.post(COMMENTS_API_ENDPOINT, comment_id, SIMPLE_LIKE_ENDPOINT)
+        return PostComment(self.sdk, raw_data=response)
 
+    def unlike_comment(self, comment_id):
+        response = self.sdk.delete(COMMENTS_API_ENDPOINT, comment_id, SIMPLE_LIKE_ENDPOINT)
+        return PostComment(self.sdk, raw_data=response)
 
-def like_post(sdk, post_id):
-    response = sdk.post(POST_API_ENDPOINT, post_id, SIMPLE_LIKE_ENDPOINT)
-    return Post(response)
+    def get_likes_for_post(self, post_id):
+        response = self.sdk.get(POST_API_ENDPOINT, post_id, LIKES_ENDPOINT)
+        return [PostLike(self.sdk, raw_data=like) for like in response]
 
+    def get_likes_for_comment(self, comment_id):
+        response = self.sdk.get(COMMENTS_API_ENDPOINT, comment_id, LIKES_ENDPOINT)
+        return [CommentLike(self.sdk, raw_data=like) for like in response]
 
-def unlike_post(sdk, post_id):
-    response = sdk.delete(POST_API_ENDPOINT, post_id, SIMPLE_LIKE_ENDPOINT)
-    return Post(response)
+    def _commentify(self, comment_or_string):
+        if isinstance(comment_or_string, str):
+            return PostComment(self.sdk, text=comment_or_string)
+        return comment_or_string
 
-
-def like_comment(sdk, comment_id):
-    response = sdk.post(COMMENTS_API_ENDPOINT, comment_id, SIMPLE_LIKE_ENDPOINT)
-    return PostComment(response)
-
-
-def unlike_comment(sdk, comment_id):
-    response = sdk.delete(COMMENTS_API_ENDPOINT, comment_id, SIMPLE_LIKE_ENDPOINT)
-    return PostComment(response)
-
-
-def get_likes_for_post(sdk, post_id):
-    response = sdk.get(POST_API_ENDPOINT, post_id, LIKES_ENDPOINT)
-    return [PostLike(raw_data=like) for like in response]
-
-
-def get_likes_for_comment(sdk, comment_id):
-    response = sdk.get(COMMENTS_API_ENDPOINT, comment_id, LIKES_ENDPOINT)
-    return [CommentLike(raw_data=like) for like in response]
-
-
-def _commentify(comment_or_string):
-    if isinstance(comment_or_string, str):
-        return PostComment(text=comment_or_string)
-    return comment_or_string
-
-
-def _postify(post_or_string):
-    if isinstance(post_or_string, str):
-        return Post(text=post_or_string)
-    return post_or_string
+    def _postify(self, post_or_string):
+        if isinstance(post_or_string, str):
+            return Post(self.sdk, text=post_or_string)
+        return post_or_string
 
 
 class Post:
-    def __init__(self, raw_data=None,
+    def __init__(self, sdk, raw_data=None,
                  text=None,
                  title=None,
                  labels=None,
@@ -94,6 +86,7 @@ class Post:
                  media=None,
                  streamid=None,
                  ):
+        self.sdk = sdk
         self._raw = raw_data or {}
         if text:
             self._raw["text"] = text
@@ -154,27 +147,28 @@ class Post:
         return self._raw.get("firstname")
 
     def get_files(self):
-        return [FileData(raw_data=file) for file in self._raw.get("files", [])]
+        return [FileData(self.sdk, raw_data=file) for file in self._raw.get("files", [])]
 
     def get_media(self):
-        return [FileData(raw_data=file) for file in self._raw.get("media", [])]
+        return [FileData(self.sdk, raw_data=file) for file in self._raw.get("media", [])]
 
-    def like(self, sdk):
-        return like_post(sdk, self.get_id())
+    def like(self):
+        return self.sdk.posts.like_post(self.get_id())
 
-    def unlike(self, sdk):
-        return unlike_post(sdk, self.get_id())
+    def unlike(self):
+        return self.sdk.posts.unlike_post(self.get_id())
 
-    def comment(self, sdk, comment):
-        return comment_on_post(sdk, self.get_id(), comment)
+    def comment(self, comment):
+        return self.sdk.posts.comment_on_post(self.get_id(), comment)
 
-    def delete(self, sdk):
-        return delete_post(sdk, self.get_id())
+    def delete(self):
+        return self.sdk.posts.delete_post(self.get_id())
 
 
 class PostComment:
-    def __init__(self, raw_data=None,
+    def __init__(self, sdk, raw_data=None,
                  text=None):
+        self.sdk = sdk
         self._raw = raw_data or {}
         if text:
             self._raw["text"] = text
@@ -212,21 +206,22 @@ class PostComment:
     def get_avatar(self):
         return self._raw.get("avatar")
 
-    def like(self, sdk):
-        return like_comment(sdk, self.get_id())
+    def like(self):
+        return self.sdk.posts.like_comment(self.get_id())
 
-    def unlike(self, sdk):
-        return unlike_comment(sdk, self.get_id())
+    def unlike(self):
+        return self.sdk.posts.unlike_comment(self.get_id())
 
-    def reply(self, sdk, comment):
-        return comment_on_post(sdk, self.get_postid(), comment)
+    def reply(self, comment):
+        return self.sdk.posts.comment_on_post(self.get_postid(), comment)
 
-    def delete(self, sdk):
-        return delete_comment(sdk, self.get_id())
+    def delete(self):
+        return self.sdk.posts.delete_comment(self.get_id())
 
 
 class PostLike:
-    def __init__(self, raw_data=None):
+    def __init__(self, sdk, raw_data=None):
+        self.sdk = sdk
         self._raw = raw_data or {}
 
     def get_user_id(self):
@@ -246,7 +241,8 @@ class PostLike:
 
 
 class CommentLike:
-    def __init__(self, raw_data=None):
+    def __init__(self, sdk, raw_data=None):
+        self.sdk = sdk
         self._raw = raw_data or {}
 
     def get_name(self):
