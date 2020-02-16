@@ -2,7 +2,7 @@ import requests
 
 from beekeepersdk.conversations import ConversationApi
 from beekeepersdk.files import FileApi
-from beekeepersdk.posts import PostApi
+from beekeepersdk.streams import StreamApi
 from beekeepersdk.profiles import ProfileApi
 from beekeepersdk.users import UserApi
 
@@ -17,7 +17,7 @@ class BeekeeperSDK:
         self.api_token = api_token
         self.conversations = ConversationApi(self)
         self.files = FileApi(self)
-        self.posts = PostApi(self)
+        self.streams = StreamApi(self)
         self.profiles = ProfileApi(self)
         self.users = UserApi(self)
 

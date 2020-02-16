@@ -1,17 +1,39 @@
 from beekeepersdk.files import FileData
 
+STREAM_API_ENDPOINT = "streams"
 POST_API_ENDPOINT = "posts"
+COMMENTS_API_ENDPOINT = "comments"
+
 COMMENTS_ENDPOINT = "comments"
+POSTS_ENDPOINT = "posts"
 SIMPLE_LIKE_ENDPOINT = "like"
 LIKES_ENDPOINT = "likes"
 
-COMMENTS_API_ENDPOINT = "comments"
 
-
-class PostApi:
+class StreamApi:
 
     def __init__(self, sdk):
         self.sdk = sdk
+
+    def get_streams(self):
+        response = self.sdk.get(STREAM_API_ENDPOINT)
+        return [Stream(self.sdk, raw_data=stream) for stream in response]
+
+    def get_stream(self, stream_id):
+        response = self.sdk.get(STREAM_API_ENDPOINT, stream_id)
+        return Stream(self.sdk, raw_data=response)
+
+    def get_posts_from_stream(self, stream_id, after=None, limit=None, include_comments=False, before=None):
+        query = {}
+        if limit:
+            query["limit"] = limit
+        if before is not None:
+            query["before"] = before
+        if after is not None:
+            query["after"] = after
+        query["include_comments"] = include_comments
+        response = self.sdk.get(STREAM_API_ENDPOINT, stream_id, POSTS_ENDPOINT, query=query)
+        return [Post(self.sdk, raw_data=post) for post in response]
 
     def get_post(self, post_id):
         response = self.sdk.get(POST_API_ENDPOINT, post_id)
@@ -23,8 +45,7 @@ class PostApi:
 
     def create_post(self, stream_id, post):
         real_post = self._postify(post)
-        real_post._raw["streamid"] = stream_id
-        response = self.sdk.post(POST_API_ENDPOINT,
+        response = self.sdk.post(STREAM_API_ENDPOINT, stream_id, POSTS_ENDPOINT,
                                  payload=real_post._raw)
         return Post(self.sdk, raw_data=response)
 
@@ -75,6 +96,24 @@ class PostApi:
         if isinstance(post_or_string, str):
             return Post(self.sdk, text=post_or_string)
         return post_or_string
+
+
+class Stream:
+    def __init__(self, sdk, raw_data=None):
+        self.sdk = sdk
+        self._raw = raw_data
+
+    def get_id(self):
+        return self._raw.get("id")
+
+    def get_description(self):
+        return self._raw.get("description")
+
+    def get_name(self):
+        return self._raw.get("name")
+
+    def post(self, post):
+        self.sdk.streams.create_post(self.get_id(), post)
 
 
 class Post:
@@ -153,16 +192,16 @@ class Post:
         return [FileData(self.sdk, raw_data=file) for file in self._raw.get("media", [])]
 
     def like(self):
-        return self.sdk.posts.like_post(self.get_id())
+        return self.sdk.streams.like_post(self.get_id())
 
     def unlike(self):
-        return self.sdk.posts.unlike_post(self.get_id())
+        return self.sdk.streams.unlike_post(self.get_id())
 
     def comment(self, comment):
-        return self.sdk.posts.comment_on_post(self.get_id(), comment)
+        return self.sdk.streams.comment_on_post(self.get_id(), comment)
 
     def delete(self):
-        return self.sdk.posts.delete_post(self.get_id())
+        return self.sdk.streams.delete_post(self.get_id())
 
 
 class PostComment:
@@ -207,16 +246,16 @@ class PostComment:
         return self._raw.get("avatar")
 
     def like(self):
-        return self.sdk.posts.like_comment(self.get_id())
+        return self.sdk.streams.like_comment(self.get_id())
 
     def unlike(self):
-        return self.sdk.posts.unlike_comment(self.get_id())
+        return self.sdk.streams.unlike_comment(self.get_id())
 
     def reply(self, comment):
-        return self.sdk.posts.comment_on_post(self.get_postid(), comment)
+        return self.sdk.streams.comment_on_post(self.get_postid(), comment)
 
     def delete(self):
-        return self.sdk.posts.delete_comment(self.get_id())
+        return self.sdk.streams.delete_comment(self.get_id())
 
 
 class PostLike:
