@@ -1,10 +1,12 @@
 import setuptools
 with open("README.md", "r") as fh:
     long_description = fh.read()
+with open("beekeeper_sdk/VERSION", "r") as fh:
+    version = fh.read()
 
 setuptools.setup(
     name='beekeeper_sdk',
-    version='0.1',
+    version=version,
     scripts=[],
     author="Aline Abler",
     author_email="aline.abler@beekeeper.io",
@@ -14,6 +16,7 @@ setuptools.setup(
     url="https://github.com/beekpr/beekeeper-sdk-python",
     install_requires=['requests', 'python-magic'],
     packages=setuptools.find_packages(),
+    include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

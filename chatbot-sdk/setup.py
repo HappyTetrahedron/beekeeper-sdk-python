@@ -1,10 +1,11 @@
 import setuptools
 with open("README.md", "r") as fh:
     long_description = fh.read()
-
+with open("../beekeeper-sdk/beekeeper_sdk/VERSION", "r") as fh:
+    version = fh.read()
 setuptools.setup(
     name='beekeeper_chatbot_sdk',
-    version='0.1',
+    version=version,
     scripts=[],
     author="Aline Abler",
     author_email="aline.abler@beekeeper.io",
@@ -12,7 +13,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/beekpr/beekeeper-sdk-python",
-    install_requires=['beekeeper_sdk', 'pubnub', 'cryptography'],
+    install_requires=['beekeeper_sdk=={}'.format(version), 'pubnub', 'cryptography'],
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
