@@ -1,5 +1,6 @@
 import requests
 
+from . import __version__
 from .conversations.conversations import ConversationApi
 from .files.files import FileApi
 from .streams.streams import StreamApi
@@ -21,13 +22,16 @@ class BeekeeperSDK:
         self.profiles = ProfileApi(self)
         self.users = UserApi(self)
 
-        self.auth_header = {"Authorization": "Token {}".format(self.api_token)}
+        self.headers = {
+            "Authorization": "Token {}".format(self.api_token),
+            "User-Agent": "BeekeeperSDK-Python/{}".format(__version__)
+        }
 
     def get(self, *path, base_path=API_BASE_PATH, query=None):
         endpoint = "/".join([str(it) for it in path])
         response = requests.get(
             "{}{}{}".format(self.tenant_url, base_path, endpoint),
-            headers=self.auth_header,
+            headers=self.headers,
             params=query
         )
         json = response.json()
@@ -39,7 +43,7 @@ class BeekeeperSDK:
         endpoint = "/".join([str(it) for it in path])
         response = requests.delete(
             "{}{}{}".format(self.tenant_url, base_path, endpoint),
-            headers=self.auth_header,
+            headers=self.headers,
         )
         json = response.json()
         if "error" in json:
@@ -50,7 +54,7 @@ class BeekeeperSDK:
         payload = payload or {}
         endpoint = "/".join([str(it) for it in path])
         headers = {"Content-Type": "application/json"}
-        headers.update(self.auth_header)
+        headers.update(self.headers)
         response = requests.post(
             "{}{}{}".format(self.tenant_url, base_path, endpoint),
             json=payload,
@@ -65,7 +69,7 @@ class BeekeeperSDK:
         payload = payload or {}
         endpoint = "/".join([str(it) for it in path])
         headers = {"Content-Type": "application/json"}
-        headers.update(self.auth_header)
+        headers.update(self.headers)
         response = requests.put(
             "{}{}{}".format(self.tenant_url, base_path, endpoint),
             json=payload,
@@ -77,7 +81,7 @@ class BeekeeperSDK:
         return json
 
     def follow_redirect(self, url):
-        response = requests.head(url, headers=self.auth_header)
+        response = requests.head(url, headers=self.headers)
         return response.headers.get("Location")
 
 
