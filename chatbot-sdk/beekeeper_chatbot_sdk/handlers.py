@@ -11,8 +11,9 @@ class CommandHandler:
 
     def matches(self, message):
         if message.get_type() in self.message_types:
-            if message.get_text().startswith("/{}".format(self.command)):
-                return True
+            if message.get_text():
+                if message.get_text().startswith("/{}".format(self.command)):
+                    return True
         return False
 
     def handle(self, bot, message):
@@ -27,8 +28,9 @@ class RegexHandler:
 
     def matches(self, message):
         if message.get_type() in self.message_types:
-            if self.regex.match(message.get_text()):
-                return True
+            if message.get_text():
+                if self.regex.search(message.get_text()):
+                    return True
         return False
 
     def handle(self, bot, message):
