@@ -26,7 +26,7 @@ class BeekeeperMessageListener(SubscribeCallback):
         if is_valid_message(msg):
             msg_obj = ConversationMessage(self.bot.sdk, raw_data=msg.get('data'))
             if not self.is_from_current_user(msg_obj):
-                self.bot.on_message(msg_obj)
+                self.bot._on_message(msg_obj)
 
     def is_from_current_user(self, message):
         return message.get_user_id() == self.bot.user.get_id()

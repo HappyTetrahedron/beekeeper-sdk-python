@@ -1,6 +1,4 @@
 import base64
-from abc import ABC
-from abc import abstractmethod
 
 from beekeeper_sdk.users import User
 from pubnub.pnconfiguration import PNConfiguration
@@ -13,12 +11,13 @@ from .decrypter import Decrypter
 CONFIG_API_ENDPOINT = "config/client"
 
 
-class BeekeeperChatBot(ABC):
+class BeekeeperChatBot:
     def __init__(self, tenant_url, api_token):
         super().__init__()
         self.sdk = BeekeeperSDK(tenant_url=tenant_url, api_token=api_token)
         self.user = None
         self._pubnub = None
+        self._handlers = []
 
     def start(self):
         config = self.sdk.get(CONFIG_API_ENDPOINT)
@@ -37,13 +36,19 @@ class BeekeeperChatBot(ABC):
 
         self._pubnub.subscribe().channels(enc_channel.get('channel')).execute()
 
+    def add_handler(self, handler):
+        if handler not in self._handlers:
+            self._handlers.append(handler)
+
+    def remove_handler(self, handler):
+        if handler in self._handlers:
+            self._handlers.remove(handler)
+
     def stop(self):
         self._pubnub.unsubscribe_all().execute()
 
-    @abstractmethod
-    def on_message(self, message):
-        pass
-
-
-def is_valid_message(thing):
-    return thing.get('action') == 'create' and thing.get('type') == 'message' and 'data' in thing
+    def _on_message(self, message):
+        for handler in self._handlers:
+            if handler.matches(message):
+                handler.handle(self, message)
+                return
