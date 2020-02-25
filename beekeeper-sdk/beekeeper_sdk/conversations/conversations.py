@@ -1,20 +1,20 @@
 from beekeeper_sdk.files import FileData
 
-API_ENDPOINT = "conversations"
-MESSAGES_ENDPOINT = "messages"
+API_ENDPOINT = 'conversations'
+MESSAGES_ENDPOINT = 'messages'
 
-USER_ROLE_ADMIN = "admin"
-USER_ROLE_MEMBER = "member"
+USER_ROLE_ADMIN = 'admin'
+USER_ROLE_MEMBER = 'member'
 
-MESSAGE_TYPE_REGULAR = "regular"
-MESSAGE_TYPE_EVENT = "event"
-MESSAGE_TYPE_CONTROL = "control"
+MESSAGE_TYPE_REGULAR = 'regular'
+MESSAGE_TYPE_EVENT = 'event'
+MESSAGE_TYPE_CONTROL = 'control'
 
-CONVERSATION_FOLDER_INBOX = "inbox"
-CONVERSATION_FOLDER_ARCHIVE = "archive"
+CONVERSATION_FOLDER_INBOX = 'inbox'
+CONVERSATION_FOLDER_ARCHIVE = 'archive'
 
-CONVERSATION_TYPE_ONE_ON_ONE = "one_on_one"
-CONVERSATION_TYPE_GROUP = "group"
+CONVERSATION_TYPE_ONE_ON_ONE = 'one_on_one'
+CONVERSATION_TYPE_GROUP = 'group'
 
 
 class ConversationApi:
@@ -25,22 +25,27 @@ class ConversationApi:
     def get_conversations(self, folder=None, limit=None, before=None):
         query = {}
         if folder is not None:
-            query["folder"] = folder
+            query['folder'] = folder
         if limit:
-            query["limit"] = limit
+            query['limit'] = limit
         if before is not None:
-            query["before"] = before
+            query['before'] = before
         response = self.sdk.api_client.get(API_ENDPOINT, query=query)
         return [Conversation(self.sdk, raw_data=conversation) for conversation in response]
 
-    def create_new_conversation(self, conversation_name, user_ids, group_image=None,
-                                conversation_type=CONVERSATION_TYPE_GROUP):
-        new_conversation = {"name": conversation_name, "user_ids": user_ids}
+    def create_new_conversation(
+            self,
+            conversation_name,
+            user_ids,
+            group_image=None,
+            conversation_type=CONVERSATION_TYPE_GROUP,
+    ):
+        new_conversation = {'name': conversation_name, 'user_ids': user_ids}
 
         if conversation_type:
-            new_conversation["conversation_type"] = conversation_type
+            new_conversation['conversation_type'] = conversation_type
         if group_image:
-            new_conversation["group_image"] = group_image
+            new_conversation['group_image'] = group_image
 
         response = self.sdk.api_client.post(API_ENDPOINT, payload=new_conversation)
         return Conversation(self.sdk, response)
@@ -50,7 +55,7 @@ class ConversationApi:
         return Conversation(self.sdk, raw_data=response)
 
     def get_conversation_by_user(self, user_id):
-        response = self.sdk.api_client.get(API_ENDPOINT, "by_user", user_id)
+        response = self.sdk.api_client.get(API_ENDPOINT, 'by_user', user_id)
         return Conversation(self.sdk, raw_data=response)
 
     def send_message_to_conversation(self, conversation_id, message):
@@ -64,48 +69,47 @@ class ConversationApi:
         return ConversationMessage(self.sdk, raw_data=response)
 
     def leave_conversation(self, conversation_id):
-        response = self.sdk.api_client.post(API_ENDPOINT, conversation_id, "leave")
-        return response.get("status") == "OK"
+        response = self.sdk.api_client.post(API_ENDPOINT, conversation_id, 'leave')
+        return response.get('status') == 'OK'
 
     def archive_conversation(self, conversation_id):
-        response = self.sdk.api_client.post(API_ENDPOINT, conversation_id, "archive")
+        response = self.sdk.api_client.post(API_ENDPOINT, conversation_id, 'archive')
         return Conversation(self.sdk, raw_data=response)
 
     def un_archive_conversation(self, conversation_id):
-        response = self.sdk.api_client.delete(API_ENDPOINT, conversation_id, "archive")
+        response = self.sdk.api_client.delete(API_ENDPOINT, conversation_id, 'archive')
         return Conversation(self.sdk, raw_data=response)
 
     def add_user_to_conversation(self, conversation_id, user_id, role=USER_ROLE_MEMBER):
-        body = {"role": role}
-        response = self.sdk.api_client.put(API_ENDPOINT, conversation_id, "members", user_id,
-                                payload=body)
+        body = {'role': role}
+        response = self.sdk.api_client.put(API_ENDPOINT, conversation_id, 'members', user_id, payload=body)
         return ConversationMember(self.sdk, raw_data=response)
 
     def remove_user_from_conversation(self, conversation_id, user_id):
-        response = self.sdk.api_client.delete(API_ENDPOINT, conversation_id, "members", user_id)
-        return response.get("status") == "OK"
+        response = self.sdk.api_client.delete(API_ENDPOINT, conversation_id, 'members', user_id)
+        return response.get('status') == 'OK'
 
     def get_members_of_conversation(self, conversation_id, include_suspended=None, limit=None, offset=None):
         query = {}
         if include_suspended is not None:
-            query["include_suspended"] = include_suspended
+            query['include_suspended'] = include_suspended
         if limit:
-            query["limit"] = limit
+            query['limit'] = limit
         if offset is not None:
-            query["offset"] = offset
-        response = self.sdk.api_client.get(API_ENDPOINT, conversation_id, "members", query=query)
+            query['offset'] = offset
+        response = self.sdk.api_client.get(API_ENDPOINT, conversation_id, 'members', query=query)
         return [ConversationMember(self.sdk, raw_data=member) for member in response]
 
     def get_messages_of_conversation(self, conversation_id, after=None, before=None, limit=None, message_id=None):
         query = {}
         if message_id is not None:
-            query["message_id"] = message_id
+            query['message_id'] = message_id
         if limit:
-            query["limit"] = limit
+            query['limit'] = limit
         if after is not None:
-            query["after"] = after
+            query['after'] = after
         if before is not None:
-            query["before"] = before
+            query['before'] = before
         response = self.sdk.api_client.get(API_ENDPOINT, conversation_id, MESSAGES_ENDPOINT, query=query)
         return [ConversationMessage(self.sdk, raw_data=message) for message in response]
 
@@ -125,55 +129,54 @@ class ConversationMessage:
             files=None,
             media=None,
             addons=None,
-
     ):
         self.sdk = sdk
         self._raw = raw_data or {}
         if text:
-            self._raw["text"] = text
+            self._raw['text'] = text
         if message_type:
-            self._raw["message_type"] = message_type
+            self._raw['message_type'] = message_type
 
         if files:
-            self._raw["files"] = [file._raw for file in files]
+            self._raw['files'] = [file._raw for file in files]
         if media:
-            self._raw["media"] = [medium._raw for medium in media]
+            self._raw['media'] = [medium._raw for medium in media]
 
         if addons:
-            self._raw["addons"] = [addon._raw for addon in addons]
+            self._raw['addons'] = [addon._raw for addon in addons]
 
     def get_conversation_id(self):
-        return self._raw.get("conversation_id")
+        return self._raw.get('conversation_id')
 
     def get_id(self):
-        return self._raw.get("id")
+        return self._raw.get('id')
 
     def get_text(self):
-        return self._raw.get("text")
+        return self._raw.get('text')
 
     def get_type(self):
-        return self._raw.get("message_type")
+        return self._raw.get('message_type')
 
     def get_profile(self):
-        return self._raw.get("profile")
+        return self._raw.get('profile')
 
     def get_user_id(self):
-        return self._raw.get("user_id")
+        return self._raw.get('user_id')
 
     def get_name(self):
-        return self._raw.get("name")
+        return self._raw.get('name')
 
     def get_created(self):
-        return self._raw.get("created")
+        return self._raw.get('created')
 
     def get_files(self):
-        return [FileData(self.sdk, raw_data=file) for file in self._raw.get("files", [])]
+        return [FileData(self.sdk, raw_data=file) for file in self._raw.get('files', [])]
 
     def get_media(self):
-        return [FileData(self.sdk, raw_data=file) for file in self._raw.get("media", [])]
+        return [FileData(self.sdk, raw_data=file) for file in self._raw.get('media', [])]
 
     def get_addons(self):
-        return [ConversationMessageAddon(self.sdk, raw_data=addon) for addon in self._raw.get("addons", [])]
+        return [ConversationMessageAddon(self.sdk, raw_data=addon) for addon in self._raw.get('addons', [])]
 
     def reply(self, message):
         self.sdk.conversations.send_message_to_conversation(self.get_conversation_id(), message)
@@ -185,44 +188,44 @@ class Conversation:
         self._raw = raw_data or {}
 
     def get_type(self):
-        return self._raw.get("conversation_type")
+        return self._raw.get('conversation_type')
 
     def get_id(self):
-        return self._raw.get("id")
+        return self._raw.get('id')
 
     def get_name(self):
-        return self._raw.get("name")
+        return self._raw.get('name')
 
     def get_snippet(self):
-        return self._raw.get("snippet")
+        return self._raw.get('snippet')
 
     def get_profile(self):
-        return self._raw.get("profile")
+        return self._raw.get('profile')
 
     def get_modified(self):
-        return self._raw.get("modified")
+        return self._raw.get('modified')
 
     def get_is_admin(self):
-        return self._raw.get("is_admin")
+        return self._raw.get('is_admin')
 
     def get_avatar(self):
-        return self._raw.get("avatar")
+        return self._raw.get('avatar')
 
     def get_user_id(self):
-        return self._raw.get("user_id")
+        return self._raw.get('user_id')
 
     def get_folder(self):
-        return self._raw.get("folder")
+        return self._raw.get('folder')
 
     def send_message(self, message):
         return self.sdk.conversations.send_message_to_conversation(self.get_id(), message)
 
     def change_name(self, new_name):
-        self._raw["name"] = new_name
+        self._raw['name'] = new_name
         return self._save()
 
     def change_avatar(self, new_avatar):
-        self._raw["avatar"] = new_avatar
+        self._raw['avatar'] = new_avatar
         return self._save()
 
     def leave(self):
@@ -247,8 +250,11 @@ class Conversation:
         return self.sdk.conversations.get_messages_of_conversation(self.get_id(), after, before, limit, message_id)
 
     def _save(self):
-        response = self.sdk.api_client.put(API_ENDPOINT, self.get_id(),
-                           payload=self._raw)
+        response = self.sdk.api_client.put(
+            API_ENDPOINT,
+            self.get_id(),
+            payload=self._raw,
+        )
         self._raw = response
         return self
 
@@ -259,11 +265,11 @@ class ConversationMember:
         self._raw = raw_data or {}
 
     def get_role(self):
-        return self._raw.get("role")
+        return self._raw.get('role')
 
     def get_user(self):
         # TODO turn into user object
-        return self._raw.get("user")
+        return self._raw.get('user')
 
 
 class ConversationMessageInfo:
@@ -272,11 +278,11 @@ class ConversationMessageInfo:
         self._raw = raw_data or {}
 
     def get_message(self):
-        return ConversationMessage(self.sdk, raw_data=self._raw.get("message"))
+        return ConversationMessage(self.sdk, raw_data=self._raw.get('message'))
 
     def get_message_receipts(self):
         return [ConversationMessageReceipt(self.sdk, raw_data=receipt)
-                for receipt in self._raw.get("message_receipts", [])]
+                for receipt in self._raw.get('message_receipts', [])]
 
 
 class ConversationMessageReceipt:
@@ -285,23 +291,23 @@ class ConversationMessageReceipt:
         self._raw = raw_data or {}
 
     def get_id(self):
-        return self._raw.get("id")
+        return self._raw.get('id')
 
     def get_user_id(self):
-        return self._raw.get("user_id")
+        return self._raw.get('user_id')
 
     def get_message_id(self):
-        return self._raw.get("message_id")
+        return self._raw.get('message_id')
 
     def get_type(self):
-        return self._raw.get("receipt_type")
+        return self._raw.get('receipt_type')
 
     def get_created(self):
-        return self._raw.get("created")
+        return self._raw.get('created')
 
     def get_user(self):
         # TODO turn into user object
-        return self._raw.get("user")
+        return self._raw.get('user')
 
 
 class ConversationMessageAddon:
@@ -310,9 +316,9 @@ class ConversationMessageAddon:
         self._raw = raw_data or {}
 
     def get_type(self):
-        return self._raw.get("addon_type")
+        return self._raw.get('addon_type')
 
     def get_id(self):
-        return self._raw.get("uuid")
+        return self._raw.get('uuid')
 
     # TODO add representations for concrete addon types

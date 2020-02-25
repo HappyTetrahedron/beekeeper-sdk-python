@@ -4,7 +4,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher
 from cryptography.hazmat.primitives.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import modes
 
-IV = "0123456789012345".encode('utf-8')
+IV = '0123456789012345'.encode('utf-8')
 
 
 class Decrypter:

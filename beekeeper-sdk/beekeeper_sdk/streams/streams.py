@@ -1,13 +1,13 @@
 from beekeeper_sdk.files import FileData
 
-STREAM_API_ENDPOINT = "streams"
-POST_API_ENDPOINT = "posts"
-COMMENTS_API_ENDPOINT = "comments"
+STREAM_API_ENDPOINT = 'streams'
+POST_API_ENDPOINT = 'posts'
+COMMENTS_API_ENDPOINT = 'comments'
 
-COMMENTS_ENDPOINT = "comments"
-POSTS_ENDPOINT = "posts"
-SIMPLE_LIKE_ENDPOINT = "like"
-LIKES_ENDPOINT = "likes"
+COMMENTS_ENDPOINT = 'comments'
+POSTS_ENDPOINT = 'posts'
+SIMPLE_LIKE_ENDPOINT = 'like'
+LIKES_ENDPOINT = 'likes'
 
 
 class StreamApi:
@@ -26,12 +26,12 @@ class StreamApi:
     def get_posts_from_stream(self, stream_id, after=None, limit=None, include_comments=False, before=None):
         query = {}
         if limit:
-            query["limit"] = limit
+            query['limit'] = limit
         if before is not None:
-            query["before"] = before
+            query['before'] = before
         if after is not None:
-            query["after"] = after
-        query["include_comments"] = include_comments
+            query['after'] = after
+        query['include_comments'] = include_comments
         response = self.sdk.api_client.get(STREAM_API_ENDPOINT, stream_id, POSTS_ENDPOINT, query=query)
         return [Post(self.sdk, raw_data=post) for post in response]
 
@@ -41,12 +41,11 @@ class StreamApi:
 
     def delete_post(self, post_id):
         response = self.sdk.api_client.delete(POST_API_ENDPOINT, post_id)
-        return response.get("status") == "OK"
+        return response.get('status') == 'OK'
 
     def create_post(self, stream_id, post):
         real_post = self._postify(post)
-        response = self.sdk.api_client.post(STREAM_API_ENDPOINT, stream_id, POSTS_ENDPOINT,
-                                 payload=real_post._raw)
+        response = self.sdk.api_client.post(STREAM_API_ENDPOINT, stream_id, POSTS_ENDPOINT, payload=real_post._raw)
         return Post(self.sdk, raw_data=response)
 
     def get_post_comments(self, post_id):
@@ -55,13 +54,12 @@ class StreamApi:
 
     def comment_on_post(self, post_id, comment):
         real_comment = self._commentify(comment)
-        response = self.sdk.api_client.post(POST_API_ENDPOINT, post_id, COMMENTS_ENDPOINT,
-                                 payload=real_comment._raw)
+        response = self.sdk.api_client.post(POST_API_ENDPOINT, post_id, COMMENTS_ENDPOINT, payload=real_comment._raw)
         return PostComment(self.sdk, raw_data=response)
 
     def delete_comment(self, comment_id):
         response = self.sdk.api_client.delete(COMMENTS_API_ENDPOINT, comment_id)
-        return response.get("status") == "OK"
+        return response.get('status') == 'OK'
 
     def like_post(self, post_id):
         response = self.sdk.api_client.post(POST_API_ENDPOINT, post_id, SIMPLE_LIKE_ENDPOINT)
@@ -104,92 +102,95 @@ class Stream:
         self._raw = raw_data
 
     def get_id(self):
-        return self._raw.get("id")
+        return self._raw.get('id')
 
     def get_description(self):
-        return self._raw.get("description")
+        return self._raw.get('description')
 
     def get_name(self):
-        return self._raw.get("name")
+        return self._raw.get('name')
 
     def post(self, post):
         self.sdk.streams.create_post(self.get_id(), post)
 
 
 class Post:
-    def __init__(self, sdk, raw_data=None,
-                 text=None,
-                 title=None,
-                 labels=None,
-                 files=None,
-                 media=None,
-                 streamid=None,
-                 ):
+    def __init__(
+            self,
+            sdk,
+            raw_data=None,
+            text=None,
+            title=None,
+            labels=None,
+            files=None,
+            media=None,
+            streamid=None,
+    ):
         self.sdk = sdk
         self._raw = raw_data or {}
         if text:
-            self._raw["text"] = text
+            self._raw['text'] = text
         if title:
-            self._raw["title"] = title
+            self._raw['title'] = title
         if labels:
-            self._raw["labels"] = labels
+            self._raw['labels'] = labels
         if streamid:
-            self._raw["streamid"] = streamid
+            self._raw['streamid'] = streamid
         if files:
-            self._raw["files"] = [file._raw for file in files]
+            self._raw['files'] = [file._raw for file in files]
         if media:
-            self._raw["media"] = [medium._raw for medium in media]
+            self._raw['media'] = [medium._raw for medium in media]
 
     def get_id(self):
-        return self._raw.get("id")
+        return self._raw.get('id')
 
     def get_text(self):
-        return self._raw.get("text")
+        return self._raw.get('text')
 
     def get_title(self):
-        return self._raw.get("title")
+        return self._raw.get('title')
 
     def get_labels(self):
-        return self._raw.get("labels")
+        return self._raw.get('labels')
 
     def get_display_name(self):
-        return self._raw.get("display_name")
+        return self._raw.get('display_name')
 
     def get_name(self):
-        return self._raw.get("name")
+        return self._raw.get('name')
 
     def get_like_count(self):
-        return self._raw.get("like_count")
+        return self._raw.get('like_count')
 
     def get_display_name_extension(self):
-        return self._raw.get("display_name_extension")
+        return self._raw.get('display_name_extension')
 
     def get_streamid(self):
-        return self._raw.get("streamid")
+        return self._raw.get('streamid')
 
     def get_user_id(self):
-        return self._raw.get("user_id")
+        return self._raw.get('user_id')
 
     def get_mentions(self):
-        return self._raw.get("mentions")
+        return self._raw.get('mentions')
 
     def get_created(self):
-        return self._raw.get("created")
+        return self._raw.get('created')
 
     def get_avatar(self):
-        return self._raw.get("avatar")
+        return self._raw.get('avatar')
 
     def get_profile(self):
-        return self._raw.get("profile")
+        return self._raw.get('profile')
 
     def get_firstname(self):
-        return self._raw.get("firstname")
+        return self._raw.get('firstname')
 
     def get_files(self):
-        return [FileData(self.sdk, raw_data=file) for file in self._raw.get("files", [])]
+        return [FileData(self.sdk, raw_data=file) for file in self._raw.get('files', [])]
 
     def get_media(self):
-        return [FileData(self.sdk, raw_data=file) for file in self._raw.get("media", [])]
+        return [FileData(self.sdk, raw_data=file) for file in self._raw.get('media', [])]
 
     def like(self):
         return self.sdk.streams.like_post(self.get_id())
@@ -205,45 +206,44 @@ class Post:
 
 
 class PostComment:
-    def __init__(self, sdk, raw_data=None,
-                 text=None):
+    def __init__(self, sdk, raw_data=None, text=None):
         self.sdk = sdk
         self._raw = raw_data or {}
         if text:
-            self._raw["text"] = text
+            self._raw['text'] = text
 
     def get_id(self):
-        return self._raw.get("id")
+        return self._raw.get('id')
 
     def get_postid(self):
-        return self._raw.get("postid")
+        return self._raw.get('postid')
 
     def get_text(self):
-        return self._raw.get("text")
+        return self._raw.get('text')
 
     def get_display_name(self):
-        return self._raw.get("display_name")
+        return self._raw.get('display_name')
 
     def get_name(self):
-        return self._raw.get("name")
+        return self._raw.get('name')
 
     def get_profile(self):
-        return self._raw.get("profile")
+        return self._raw.get('profile')
 
     def get_like_count(self):
-        return self._raw.get("like_count")
+        return self._raw.get('like_count')
 
     def get_display_name_extension(self):
-        return self._raw.get("display_name_extension")
+        return self._raw.get('display_name_extension')
 
     def get_mentions(self):
-        return self._raw.get("mentions")
+        return self._raw.get('mentions')
 
     def get_user_id(self):
-        return self._raw.get("user_id")
+        return self._raw.get('user_id')
 
     def get_avatar(self):
-        return self._raw.get("avatar")
+        return self._raw.get('avatar')
 
     def like(self):
         return self.sdk.streams.like_comment(self.get_id())
@@ -264,19 +264,19 @@ class PostLike:
         self._raw = raw_data or {}
 
     def get_user_id(self):
-        return self._raw.get("user_id")
+        return self._raw.get('user_id')
 
     def get_name(self):
-        return self._raw.get("name")
+        return self._raw.get('name')
 
     def get_display_name_extension(self):
-        return self._raw.get("display_name_extension")
+        return self._raw.get('display_name_extension')
 
     def get_profile(self):
-        return self._raw.get("profile")
+        return self._raw.get('profile')
 
     def get_avatar(self):
-        return self._raw.get("avatar")
+        return self._raw.get('avatar')
 
 
 class CommentLike:
@@ -285,17 +285,17 @@ class CommentLike:
         self._raw = raw_data or {}
 
     def get_name(self):
-        return self._raw.get("name")
+        return self._raw.get('name')
 
     def get_display_name(self):
-        return self._raw.get("display_name")
+        return self._raw.get('display_name')
 
     def get_display_name_extension(self):
-        return self._raw.get("display_name_extension")
+        return self._raw.get('display_name_extension')
 
     def get_profile(self):
-        return self._raw.get("profile")
+        return self._raw.get('profile')
 
     def get_avatar(self):
-        return self._raw.get("avatar")
+        return self._raw.get('avatar')
 
