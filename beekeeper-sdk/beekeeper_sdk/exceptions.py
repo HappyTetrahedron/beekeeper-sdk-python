@@ -1,0 +1,2 @@
+class BeekeeperApiException(Exception):
+    pass

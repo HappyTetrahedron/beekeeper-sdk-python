@@ -30,7 +30,7 @@ class ConversationApi:
             query["limit"] = limit
         if before is not None:
             query["before"] = before
-        response = self.sdk.get(API_ENDPOINT, query=query)
+        response = self.sdk.api_client.get(API_ENDPOINT, query=query)
         return [Conversation(self.sdk, raw_data=conversation) for conversation in response]
 
     def create_new_conversation(self, conversation_name, user_ids, group_image=None,
@@ -42,43 +42,47 @@ class ConversationApi:
         if group_image:
             new_conversation["group_image"] = group_image
 
-        response = self.sdk.post(API_ENDPOINT, payload=new_conversation)
+        response = self.sdk.api_client.post(API_ENDPOINT, payload=new_conversation)
         return Conversation(self.sdk, response)
 
     def get_conversation(self, conversation_id):
-        response = self.sdk.get(API_ENDPOINT, conversation_id)
+        response = self.sdk.api_client.get(API_ENDPOINT, conversation_id)
         return Conversation(self.sdk, raw_data=response)
 
     def get_conversation_by_user(self, user_id):
-        response = self.sdk.get(API_ENDPOINT, "by_user", user_id)
+        response = self.sdk.api_client.get(API_ENDPOINT, "by_user", user_id)
         return Conversation(self.sdk, raw_data=response)
 
     def send_message_to_conversation(self, conversation_id, message):
         real_message = self._messageify(message)
-        response = self.sdk.post(API_ENDPOINT, conversation_id, MESSAGES_ENDPOINT,
-                                 payload=real_message._raw)
+        response = self.sdk.api_client.post(
+            API_ENDPOINT,
+            conversation_id,
+            MESSAGES_ENDPOINT,
+            payload=real_message._raw,
+        )
         return ConversationMessage(self.sdk, raw_data=response)
 
     def leave_conversation(self, conversation_id):
-        response = self.sdk.post(API_ENDPOINT, conversation_id, "leave")
+        response = self.sdk.api_client.post(API_ENDPOINT, conversation_id, "leave")
         return response.get("status") == "OK"
 
     def archive_conversation(self, conversation_id):
-        response = self.sdk.post(API_ENDPOINT, conversation_id, "archive")
+        response = self.sdk.api_client.post(API_ENDPOINT, conversation_id, "archive")
         return Conversation(self.sdk, raw_data=response)
 
     def un_archive_conversation(self, conversation_id):
-        response = self.sdk.delete(API_ENDPOINT, conversation_id, "archive")
+        response = self.sdk.api_client.delete(API_ENDPOINT, conversation_id, "archive")
         return Conversation(self.sdk, raw_data=response)
 
     def add_user_to_conversation(self, conversation_id, user_id, role=USER_ROLE_MEMBER):
         body = {"role": role}
-        response = self.sdk.put(API_ENDPOINT, conversation_id, "members", user_id,
+        response = self.sdk.api_client.put(API_ENDPOINT, conversation_id, "members", user_id,
                                 payload=body)
         return ConversationMember(self.sdk, raw_data=response)
 
     def remove_user_from_conversation(self, conversation_id, user_id):
-        response = self.sdk.delete(API_ENDPOINT, conversation_id, "members", user_id)
+        response = self.sdk.api_client.delete(API_ENDPOINT, conversation_id, "members", user_id)
         return response.get("status") == "OK"
 
     def get_members_of_conversation(self, conversation_id, include_suspended=None, limit=None, offset=None):
@@ -89,7 +93,7 @@ class ConversationApi:
             query["limit"] = limit
         if offset is not None:
             query["offset"] = offset
-        response = self.sdk.get(API_ENDPOINT, conversation_id, "members", query=query)
+        response = self.sdk.api_client.get(API_ENDPOINT, conversation_id, "members", query=query)
         return [ConversationMember(self.sdk, raw_data=member) for member in response]
 
     def get_messages_of_conversation(self, conversation_id, after=None, before=None, limit=None, message_id=None):
@@ -102,7 +106,7 @@ class ConversationApi:
             query["after"] = after
         if before is not None:
             query["before"] = before
-        response = self.sdk.get(API_ENDPOINT, conversation_id, MESSAGES_ENDPOINT, query=query)
+        response = self.sdk.api_client.get(API_ENDPOINT, conversation_id, MESSAGES_ENDPOINT, query=query)
         return [ConversationMessage(self.sdk, raw_data=message) for message in response]
 
     def _messageify(self, message_or_string):
@@ -243,7 +247,7 @@ class Conversation:
         return self.sdk.conversations.get_messages_of_conversation(self.get_id(), after, before, limit, message_id)
 
     def _save(self):
-        response = self.sdk.put(API_ENDPOINT, self.get_id(),
+        response = self.sdk.api_client.put(API_ENDPOINT, self.get_id(),
                            payload=self._raw)
         self._raw = response
         return self

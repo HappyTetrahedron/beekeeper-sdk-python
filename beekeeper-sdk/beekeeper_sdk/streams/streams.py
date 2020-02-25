@@ -16,11 +16,11 @@ class StreamApi:
         self.sdk = sdk
 
     def get_streams(self):
-        response = self.sdk.get(STREAM_API_ENDPOINT)
+        response = self.sdk.api_client.get(STREAM_API_ENDPOINT)
         return [Stream(self.sdk, raw_data=stream) for stream in response]
 
     def get_stream(self, stream_id):
-        response = self.sdk.get(STREAM_API_ENDPOINT, stream_id)
+        response = self.sdk.api_client.get(STREAM_API_ENDPOINT, stream_id)
         return Stream(self.sdk, raw_data=response)
 
     def get_posts_from_stream(self, stream_id, after=None, limit=None, include_comments=False, before=None):
@@ -32,59 +32,59 @@ class StreamApi:
         if after is not None:
             query["after"] = after
         query["include_comments"] = include_comments
-        response = self.sdk.get(STREAM_API_ENDPOINT, stream_id, POSTS_ENDPOINT, query=query)
+        response = self.sdk.api_client.get(STREAM_API_ENDPOINT, stream_id, POSTS_ENDPOINT, query=query)
         return [Post(self.sdk, raw_data=post) for post in response]
 
     def get_post(self, post_id):
-        response = self.sdk.get(POST_API_ENDPOINT, post_id)
+        response = self.sdk.api_client.get(POST_API_ENDPOINT, post_id)
         return Post(self.sdk, raw_data=response)
 
     def delete_post(self, post_id):
-        response = self.sdk.delete(POST_API_ENDPOINT, post_id)
+        response = self.sdk.api_client.delete(POST_API_ENDPOINT, post_id)
         return response.get("status") == "OK"
 
     def create_post(self, stream_id, post):
         real_post = self._postify(post)
-        response = self.sdk.post(STREAM_API_ENDPOINT, stream_id, POSTS_ENDPOINT,
+        response = self.sdk.api_client.post(STREAM_API_ENDPOINT, stream_id, POSTS_ENDPOINT,
                                  payload=real_post._raw)
         return Post(self.sdk, raw_data=response)
 
     def get_post_comments(self, post_id):
-        response = self.sdk.get(POST_API_ENDPOINT, post_id, COMMENTS_ENDPOINT)
+        response = self.sdk.api_client.get(POST_API_ENDPOINT, post_id, COMMENTS_ENDPOINT)
         return [PostComment(self.sdk, raw_data=comment) for comment in response]
 
     def comment_on_post(self, post_id, comment):
         real_comment = self._commentify(comment)
-        response = self.sdk.post(POST_API_ENDPOINT, post_id, COMMENTS_ENDPOINT,
+        response = self.sdk.api_client.post(POST_API_ENDPOINT, post_id, COMMENTS_ENDPOINT,
                                  payload=real_comment._raw)
         return PostComment(self.sdk, raw_data=response)
 
     def delete_comment(self, comment_id):
-        response = self.sdk.delete(COMMENTS_API_ENDPOINT, comment_id)
+        response = self.sdk.api_client.delete(COMMENTS_API_ENDPOINT, comment_id)
         return response.get("status") == "OK"
 
     def like_post(self, post_id):
-        response = self.sdk.post(POST_API_ENDPOINT, post_id, SIMPLE_LIKE_ENDPOINT)
+        response = self.sdk.api_client.post(POST_API_ENDPOINT, post_id, SIMPLE_LIKE_ENDPOINT)
         return Post(self.sdk, raw_data=response)
 
     def unlike_post(self, post_id):
-        response = self.sdk.delete(POST_API_ENDPOINT, post_id, SIMPLE_LIKE_ENDPOINT)
+        response = self.sdk.api_client.delete(POST_API_ENDPOINT, post_id, SIMPLE_LIKE_ENDPOINT)
         return Post(self.sdk, raw_data=response)
 
     def like_comment(self, comment_id):
-        response = self.sdk.post(COMMENTS_API_ENDPOINT, comment_id, SIMPLE_LIKE_ENDPOINT)
+        response = self.sdk.api_client.post(COMMENTS_API_ENDPOINT, comment_id, SIMPLE_LIKE_ENDPOINT)
         return PostComment(self.sdk, raw_data=response)
 
     def unlike_comment(self, comment_id):
-        response = self.sdk.delete(COMMENTS_API_ENDPOINT, comment_id, SIMPLE_LIKE_ENDPOINT)
+        response = self.sdk.api_client.delete(COMMENTS_API_ENDPOINT, comment_id, SIMPLE_LIKE_ENDPOINT)
         return PostComment(self.sdk, raw_data=response)
 
     def get_likes_for_post(self, post_id):
-        response = self.sdk.get(POST_API_ENDPOINT, post_id, LIKES_ENDPOINT)
+        response = self.sdk.api_client.get(POST_API_ENDPOINT, post_id, LIKES_ENDPOINT)
         return [PostLike(self.sdk, raw_data=like) for like in response]
 
     def get_likes_for_comment(self, comment_id):
-        response = self.sdk.get(COMMENTS_API_ENDPOINT, comment_id, LIKES_ENDPOINT)
+        response = self.sdk.api_client.get(COMMENTS_API_ENDPOINT, comment_id, LIKES_ENDPOINT)
         return [CommentLike(self.sdk, raw_data=like) for like in response]
 
     def _commentify(self, comment_or_string):

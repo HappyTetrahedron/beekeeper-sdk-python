@@ -23,7 +23,7 @@ class ProfileApi:
             query["limit"] = limit
         if offset is not None:
             query["offset"] = offset
-        response = self.sdk.get(API_ENDPOINT, query=query)
+        response = self.sdk.api_client.get(API_ENDPOINT, query=query)
         return [Profile(self.sdk, raw_data=user) for user in response]
 
     def get_profile(self, user_id, include_totals=False):
@@ -31,28 +31,11 @@ class ProfileApi:
             "include_activities": False,
             "include_totals": include_totals
         }
-        response = self.sdk.get(API_ENDPOINT, user_id, query=query)
-        return ProfileWrapper(self.sdk, raw_data=response)
+        response = self.sdk.api_client.get(API_ENDPOINT, user_id, query=query)
+        return Profile(self.sdk, raw_data=response.get("user"))
 
     def get_profile_by_username(self, username, include_totals=False):
         return self.get_profile(username, include_totals=include_totals)
-
-    def get_user_by_tenantuserid(self, tenantuserid):
-        response = self.sdk.get(API_ENDPOINT, "by_tenant_user_id", tenantuserid)
-        return User(self.sdk, raw_data=response)
-
-    def delete_user(self, user_id):
-        response = self.sdk.delete(API_ENDPOINT, user_id)
-        return response.get("status") == "OK"
-
-
-class ProfileWrapper:
-    def __init__(self, sdk, raw_data=None):
-        self.sdk = sdk
-        self._raw = raw_data or {}
-
-    def get_user(self):
-        return Profile(self.sdk, raw_data=self._raw.get("user"))
 
 
 class Profile:

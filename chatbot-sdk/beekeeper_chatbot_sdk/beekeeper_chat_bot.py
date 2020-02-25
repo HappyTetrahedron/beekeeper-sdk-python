@@ -20,7 +20,7 @@ class BeekeeperChatBot:
         self._handlers = []
 
     def start(self):
-        config = self.sdk.get(CONFIG_API_ENDPOINT)
+        config = self.sdk.api_client.get(CONFIG_API_ENDPOINT)
         self.user = User(self.sdk, config.get('user'))
 
         pubnub_subscribe_key = config.get('tenant').get('integrations').get('pubnub').get('subscribe_key')

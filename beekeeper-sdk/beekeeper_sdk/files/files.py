@@ -1,6 +1,7 @@
 import requests
 from xml.etree import ElementTree
 import magic
+import mimetypes
 import os
 
 
@@ -49,14 +50,18 @@ class FileApi:
             return self.upload_file(file, upload_type=upload_type, mime_type=mime_type, file_name=file_name)
 
     def upload_file(self, file, upload_type=FILE_UPLOAD_TYPE_FILE, mime_type=None, file_name=None):
-        token = self.sdk.get(API_ENDPOINT, upload_type, "upload", "token")
+        token = self.sdk.api_client.get(API_ENDPOINT, upload_type, "upload", "token")
         form_data = {}
         file_content = file.read()
 
         if not mime_type:
             mime_type = mime.from_buffer(file_content)
         if not file_name:
-            file_name = "file"
+            ext = mimetypes.guess_extension(mime_type)
+            if ext:
+                file_name = "upload{}".format(ext)
+            else:
+                file_name = "upload"
 
         for form_param in token.get("additional_form_data", []):
             form_data[form_param["name"]] = form_param["value"]
@@ -78,7 +83,7 @@ class FileApi:
                 "name": file_name,
             }
 
-            response = self.sdk.post(API_ENDPOINT, upload_type, "upload", payload=registration_payload)
+            response = self.sdk.api_client.post(API_ENDPOINT, upload_type, "upload", payload=registration_payload)
             return FileData(self.sdk, raw_data=response)
         else:
             if token["upload_response_data_type"] == "json":
@@ -88,7 +93,7 @@ class FileApi:
 
     def get_presigned_url_for(self, file_url):
         # TODO validate url
-        return self.sdk.follow_redirect(file_url)
+        return self.sdk.api_client.get_redirect_url(file_url)
 
 
 class FileData:

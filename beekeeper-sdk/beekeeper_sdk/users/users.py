@@ -47,23 +47,23 @@ class UserApi:
             query["limit"] = limit
         if offset is not None:
             query["offset"] = offset
-        response = self.sdk.get(API_ENDPOINT, query=query)
+        response = self.sdk.api_client.get(API_ENDPOINT, query=query)
         return [User(self.sdk, raw_data=user) for user in response]
 
     def get_user(self, user_id):
-        response = self.sdk.get(API_ENDPOINT, user_id)
+        response = self.sdk.api_client.get(API_ENDPOINT, user_id)
         return User(self.sdk, raw_data=response)
 
     def get_user_by_username(self, username):
-        response = self.sdk.get(API_ENDPOINT, "by_name", username)
+        response = self.sdk.api_client.get(API_ENDPOINT, "by_name", username)
         return User(self.sdk, raw_data=response)
 
     def get_user_by_tenantuserid(self, tenantuserid):
-        response = self.sdk.get(API_ENDPOINT, "by_tenant_user_id", tenantuserid)
+        response = self.sdk.api_client.get(API_ENDPOINT, "by_tenant_user_id", tenantuserid)
         return User(self.sdk, raw_data=response)
 
     def delete_user(self, user_id):
-        response = self.sdk.delete(API_ENDPOINT, user_id)
+        response = self.sdk.api_client.delete(API_ENDPOINT, user_id)
         return response.get("status") == "OK"
 
 
