@@ -1,6 +1,5 @@
-from beekeeper_sdk.users import User
 
-API_ENDPOINT = "profiles"
+API_ENDPOINT = 'profiles'
 
 
 class ProfileApi:
@@ -16,23 +15,23 @@ class ProfileApi:
     ):
         query = {}
         if q is not None:
-            query["q"] = q
+            query['q'] = q
         if include_bots is not None:
-            query["include_bots"] = include_bots
+            query['include_bots'] = include_bots
         if limit:
-            query["limit"] = limit
+            query['limit'] = limit
         if offset is not None:
-            query["offset"] = offset
+            query['offset'] = offset
         response = self.sdk.api_client.get(API_ENDPOINT, query=query)
         return [Profile(self.sdk, raw_data=user) for user in response]
 
     def get_profile(self, user_id, include_totals=False):
         query = {
-            "include_activities": False,
-            "include_totals": include_totals
+            'include_activities': False,
+            'include_totals': include_totals,
         }
         response = self.sdk.api_client.get(API_ENDPOINT, user_id, query=query)
-        return Profile(self.sdk, raw_data=response.get("user"))
+        return Profile(self.sdk, raw_data=response.get('user'))
 
     def get_profile_by_username(self, username, include_totals=False):
         return self.get_profile(username, include_totals=include_totals)
@@ -44,28 +43,28 @@ class Profile:
         self._raw = raw_data or {}
 
     def get_id(self):
-        return self._raw.get("id")
+        return self._raw.get('id')
 
     def get_display_name(self):
-        return self._raw.get("display_name")
+        return self._raw.get('display_name')
 
     def get_is_bot(self):
-        return self._raw.get("is_bot")
+        return self._raw.get('is_bot')
 
     def get_profile(self):
-        return self._raw.get("profile")
+        return self._raw.get('profile')
 
     def get_firstname(self):
-        return self._raw.get("firstname")
+        return self._raw.get('firstname')
 
     def get_lastname(self):
-        return self._raw.get("lastname")
+        return self._raw.get('lastname')
 
     def get_role(self):
-        return self._raw.get("role")
+        return self._raw.get('role')
 
     def get_name(self):
-        return self._raw.get("name")
+        return self._raw.get('name')
 
     def get_avatar(self):
-        return self._raw.get("avatar")
+        return self._raw.get('avatar')
