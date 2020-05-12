@@ -1,3 +1,4 @@
+from beekeeper_sdk.iterators import BeekeeperApiLimitOffsetIterator
 
 API_ENDPOINT = 'profiles'
 
@@ -24,6 +25,11 @@ class ProfileApi:
             query['offset'] = offset
         response = self.sdk.api_client.get(API_ENDPOINT, query=query)
         return [Profile(self.sdk, raw_data=user) for user in response]
+
+    def get_profiles_iterator(self, include_bots=None):
+        def call(offset=None, limit=None):
+            return self.get_profiles(include_bots=include_bots, offset=offset, limit=limit)
+        return BeekeeperApiLimitOffsetIterator(call)
 
     def get_profile(self, user_id, include_totals=False):
         query = {

@@ -1,4 +1,5 @@
 from beekeeper_sdk.files import FileData
+from beekeeper_sdk.iterators import BeekeeperApiLimitBeforeIterator
 
 STREAM_API_ENDPOINT = 'streams'
 POST_API_ENDPOINT = 'posts'
@@ -35,6 +36,16 @@ class StreamApi:
         response = self.sdk.api_client.get(STREAM_API_ENDPOINT, stream_id, POSTS_ENDPOINT, query=query)
         return [Post(self.sdk, raw_data=post) for post in response]
 
+    def get_posts_from_stream_iterator(self, stream_id, include_comments=False):
+        def call(before=None, limit=None):
+            return self.get_posts_from_stream(
+                stream_id,
+                include_comments=include_comments,
+                before=before,
+                limit=limit
+            )
+        return BeekeeperApiLimitBeforeIterator(call)
+
     def get_post(self, post_id):
         response = self.sdk.api_client.get(POST_API_ENDPOINT, post_id)
         return Post(self.sdk, raw_data=response)
@@ -48,9 +59,19 @@ class StreamApi:
         response = self.sdk.api_client.post(STREAM_API_ENDPOINT, stream_id, POSTS_ENDPOINT, payload=real_post._raw)
         return Post(self.sdk, raw_data=response)
 
-    def get_post_comments(self, post_id):
-        response = self.sdk.api_client.get(POST_API_ENDPOINT, post_id, COMMENTS_ENDPOINT)
+    def get_post_comments(self, post_id, limit=None, before=None):
+        query = {}
+        if limit:
+            query['limit'] = limit
+        if before is not None:
+            query['before'] = before
+        response = self.sdk.api_client.get(POST_API_ENDPOINT, post_id, COMMENTS_ENDPOINT, query=query)
         return [PostComment(self.sdk, raw_data=comment) for comment in response]
+
+    def get_post_comments_iterator(self, post_id):
+        def call(before=None, limit=None):
+            return self.get_post_comments(post_id, before=before, limit=limit)
+        return BeekeeperApiLimitBeforeIterator(call)
 
     def comment_on_post(self, post_id, comment):
         real_comment = self._commentify(comment)
@@ -113,6 +134,21 @@ class Stream:
     def post(self, post):
         self.sdk.streams.create_post(self.get_id(), post)
 
+    def retrieve_posts(self, include_comments=False, after=None, before=None, limit=None):
+        return self.sdk.streams.get_posts_from_stream(
+            self.get_id(),
+            include_comments=include_comments,
+            after=after,
+            before=before,
+            limit=limit
+        )
+
+    def retrieve_posts_iterator(self, include_comments=False):
+        return self.sdk.streams.get_posts_from_stream_iterator(
+            self.get_id(),
+            include_comments=include_comments,
+        )
+
 
 class Post:
     def __init__(
@@ -143,6 +179,9 @@ class Post:
 
     def get_id(self):
         return self._raw.get('id')
+
+    def _timestamp(self):
+        return self.get_created()
 
     def get_text(self):
         return self._raw.get('text')
@@ -204,6 +243,18 @@ class Post:
     def delete(self):
         return self.sdk.streams.delete_post(self.get_id())
 
+    def retrieve_comments(self, before=None, limit=None):
+        return self.sdk.streams.get_post_comments(
+            self.get_id(),
+            before=before,
+            limit=limit
+        )
+
+    def retrieve_comments_iterator(self):
+        return self.sdk.streams.get_post_comments_iterator(
+            self.get_id()
+        )
+
 
 class PostComment:
     def __init__(self, sdk, raw_data=None, text=None):
@@ -214,6 +265,9 @@ class PostComment:
 
     def get_id(self):
         return self._raw.get('id')
+
+    def _timestamp(self):
+        return self.get_created()
 
     def get_postid(self):
         return self._raw.get('postid')
@@ -238,6 +292,9 @@ class PostComment:
 
     def get_mentions(self):
         return self._raw.get('mentions')
+
+    def get_created(self):
+        return self._raw.get('created')
 
     def get_user_id(self):
         return self._raw.get('user_id')

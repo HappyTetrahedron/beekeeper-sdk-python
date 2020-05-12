@@ -1,5 +1,9 @@
 from beekeeper_sdk.files import FileData
 
+from beekeeper_sdk.iterators import BeekeeperApiLimitAfterIterator
+from beekeeper_sdk.iterators import BeekeeperApiLimitBeforeIterator
+from beekeeper_sdk.iterators import BeekeeperApiLimitOffsetIterator
+
 API_ENDPOINT = 'conversations'
 MESSAGES_ENDPOINT = 'messages'
 
@@ -32,6 +36,11 @@ class ConversationApi:
             query['before'] = before
         response = self.sdk.api_client.get(API_ENDPOINT, query=query)
         return [Conversation(self.sdk, raw_data=conversation) for conversation in response]
+
+    def get_conversations_iterator(self, folder=None):
+        def call(before=None, limit=None):
+            return self.get_conversations(folder=folder, before=before, limit=limit)
+        return BeekeeperApiLimitBeforeIterator(call)
 
     def create_new_conversation(
             self,
@@ -89,6 +98,16 @@ class ConversationApi:
         response = self.sdk.api_client.delete(API_ENDPOINT, conversation_id, 'members', user_id)
         return response.get('status') == 'OK'
 
+    def get_members_of_conversation_iterator(self, conversation_id, include_suspended=False):
+        def call(offset=None, limit=None):
+            return self.get_members_of_conversation(
+                conversation_id,
+                include_suspended=include_suspended,
+                offset=offset,
+                limit=limit
+            )
+        return BeekeeperApiLimitOffsetIterator(call)
+
     def get_members_of_conversation(self, conversation_id, include_suspended=None, limit=None, offset=None):
         query = {}
         if include_suspended is not None:
@@ -99,6 +118,16 @@ class ConversationApi:
             query['offset'] = offset
         response = self.sdk.api_client.get(API_ENDPOINT, conversation_id, 'members', query=query)
         return [ConversationMember(self.sdk, raw_data=member) for member in response]
+
+    def get_messages_of_conversation_iterator(self, conversation_id, reversed_order=False):
+        if reversed_order:
+            def call(after=None, limit=None):
+                return self.get_messages_of_conversation(conversation_id, after=after, limit=limit)
+            return BeekeeperApiLimitAfterIterator(call, response_is_reversed=True)
+
+        def call(before=None, limit=None):
+            return self.get_messages_of_conversation(conversation_id, before=before, limit=limit)
+        return BeekeeperApiLimitBeforeIterator(call, response_is_reversed=True)
 
     def get_messages_of_conversation(self, conversation_id, after=None, before=None, limit=None, message_id=None):
         query = {}
@@ -145,6 +174,9 @@ class ConversationMessage:
         if addons:
             self._raw['addons'] = [addon._raw for addon in addons]
 
+    def _timestamp(self):
+        return self.get_created()
+
     def get_conversation_id(self):
         return self._raw.get('conversation_id')
 
@@ -186,6 +218,9 @@ class Conversation:
     def __init__(self, sdk, raw_data=None):
         self.sdk = sdk
         self._raw = raw_data or {}
+
+    def _timestamp(self):
+        return self.get_modified()
 
     def get_type(self):
         return self._raw.get('conversation_type')
@@ -249,6 +284,15 @@ class Conversation:
     def retrieve_messages(self, after=None, before=None, limit=None, message_id=None):
         return self.sdk.conversations.get_messages_of_conversation(self.get_id(), after, before, limit, message_id)
 
+    def retrieve_members_iterator(self, include_suspended=None):
+        return self.sdk.conversations.get_members_of_conversation_iterator(self.get_id(), include_suspended)
+
+    def retrieve_messages_iterator(self, reversed_order=False):
+        return self.sdk.conversations.get_messages_of_conversation_iterator(
+            self.get_id(),
+            reversed_order=reversed_order
+        )
+
     def _save(self):
         response = self.sdk.api_client.put(
             API_ENDPOINT,
@@ -267,9 +311,20 @@ class ConversationMember:
     def get_role(self):
         return self._raw.get('role')
 
-    def get_user(self):
-        # TODO turn into user object
-        return self._raw.get('user')
+    def get_name(self):
+        return self._raw.get('user', {}).get('name')
+
+    def get_display_name(self):
+        return self._raw.get('user', {}).get('display_name')
+
+    def get_id(self):
+        return self._raw.get('user', {}).get('id')
+
+    def get_suspended(self):
+        return self._raw.get('user', {}).get('suspended')
+
+    def get_avatar(self):
+        return self._raw.get('user', {}).get('avatar')
 
 
 class ConversationMessageInfo:
@@ -305,9 +360,14 @@ class ConversationMessageReceipt:
     def get_created(self):
         return self._raw.get('created')
 
-    def get_user(self):
-        # TODO turn into user object
-        return self._raw.get('user')
+    def get_user_name(self):
+        return self._raw.get('user', {}).get('name')
+
+    def get_user_display_name(self):
+        return self._raw.get('user', {}).get('display_name')
+
+    def get_user_avatar(self):
+        return self._raw.get('user', {}).get('avatar')
 
 
 class ConversationMessageAddon:

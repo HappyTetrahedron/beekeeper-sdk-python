@@ -1,3 +1,5 @@
+from beekeeper_sdk.iterators import BeekeeperApiLimitOffsetIterator
+
 API_ENDPOINT = 'users'
 
 USER_ROLE_MEMBER = 'member'
@@ -49,6 +51,24 @@ class UserApi:
             query['offset'] = offset
         response = self.sdk.api_client.get(API_ENDPOINT, query=query)
         return [User(self.sdk, raw_data=user) for user in response]
+
+    def get_users_iterator(
+            self,
+            sort=None,
+            include_bots=None,
+            include_self=None,
+            exclude_users_which_never_logged_in=None,
+    ):
+        def call(offset=None, limit=None):
+            return self.get_users(
+                sort=sort,
+                include_bots=include_bots,
+                include_self=include_self,
+                exclude_users_which_never_logged_in=exclude_users_which_never_logged_in,
+                offset=offset,
+                limit=limit
+            )
+        return BeekeeperApiLimitOffsetIterator(call)
 
     def get_user(self, user_id):
         response = self.sdk.api_client.get(API_ENDPOINT, user_id)
