@@ -23,7 +23,9 @@ CONVERSATION_TYPE_GROUP = 'group'
 CONVERSATION_MESSAGE_RECEIPT_TYPE_SENT = 'sent'
 CONVERSATION_MESSAGE_RECEIPT_TYPE_READ = 'read'
 
+
 class ConversationApi:
+    """Helper class to interact with the Beekeeper Conversation API"""
 
     def __init__(self, sdk):
         self.sdk = sdk

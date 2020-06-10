@@ -33,23 +33,54 @@ mime = magic.Magic(mime=True)
 
 
 class FileApi:
+    """Helper class to interact with the Beekeeper File API"""
 
     def __init__(self, sdk):
         self.sdk = sdk
 
     def upload_photo_from_path(self, file_path):
+        """Uploads an image file to Beekeeper given a local file path
+
+        The file is uploaded as a photo suitable to be used e.g. as post or message images
+
+        :param file_path: Path of the image file
+        """
         return self.sdk.files.upload_file_from_path(file_path, upload_type=FILE_UPLOAD_TYPE_PHOTO)
 
     def upload_photo(self, file, mime_type=None, file_name=None):
+        """Uploads an image file to Beekeeper given a File object
+
+        The file is uploaded as a photo suitable to be used e.g. as post or message attachments
+
+        :param file: File containing the image data
+        :param mime_type: (optional) mime type of the file
+        :param file_name: (optional) name of the file, including extension
+        """
         return self.upload_file(file, mime_type=mime_type, file_name=file_name, upload_type=FILE_UPLOAD_TYPE_PHOTO)
 
     def upload_file_from_path(self, file_path, upload_type=FILE_UPLOAD_TYPE_FILE):
+        """Uploads an image file to Beekeeper given a local file path
+
+        :param file_path: Path of the image file
+        :param upload_type: Type of the file, indicating what the file will be used for on Beekeeper.
+        One of `FILE_UPLOAD_TYPE_NAVIGATION_EXTENSION_FILE`, `FILE_UPLOAD_TYPE_PHOTO`, `FILE_UPLOAD_TYPE_VIDEO`,
+        `FILE_UPLOAD_TYPE_FILE`, `FILE_UPLOAD_TYPE_IMPORT`, `FILE_UPLOAD_TYPE_VOICE`
+        """
         mime_type = mime.from_file(file_path)
         file_name = os.path.basename(file_path)
         with open(file_path, 'rb') as file:
             return self.upload_file(file, upload_type=upload_type, mime_type=mime_type, file_name=file_name)
 
     def upload_file(self, file, upload_type=FILE_UPLOAD_TYPE_FILE, mime_type=None, file_name=None):
+        """Uploads a file to Beekeeper given a File object
+
+        :param file: File containing the image data
+        :param upload_type: Type of the file, indicating what the file will be used for on Beekeeper.
+        One of `FILE_UPLOAD_TYPE_NAVIGATION_EXTENSION_FILE`, `FILE_UPLOAD_TYPE_PHOTO`, `FILE_UPLOAD_TYPE_VIDEO`,
+        `FILE_UPLOAD_TYPE_FILE`, `FILE_UPLOAD_TYPE_IMPORT`, `FILE_UPLOAD_TYPE_VOICE`
+        :param mime_type: (optional) mime type of the file
+        :param file_name: (optional) name of the file, including extension
+        """
         token = self.sdk.api_client.get(API_ENDPOINT, upload_type, 'upload', 'token')
         form_data = {}
         file_content = file.read()
@@ -92,19 +123,27 @@ class FileApi:
                 raise ValueError("Did not receive expected content type for file upload")
 
     def get_presigned_url_for(self, file_url):
+        """Given the URL to a file inside Beekeeper, returns a presigned direct URL to that file.
+        The resulting URL can be accessed without authentication for a short amount of time (several minutes).
+        """
         # TODO validate url
         return self.sdk.api_client.get_redirect_url(file_url)
 
 
 class FileData:
+    """Representation of a File stored on the Beekeeper platform"""
     def __init__(self, sdk, raw_data=None):
         self.sdk = sdk
         self._raw = raw_data or {}
 
     def get_name(self):
+        """Returns the name of the file"""
         return self._raw.get('name')
 
     def get_url(self):
+        """Returns the URL at which to access the file.
+        The file can only be accessed at this URL by authenticated users.
+        """
         return self._raw.get('url')
 
     def get_key(self):
@@ -114,19 +153,25 @@ class FileData:
         return self._raw.get('userid')
 
     def get_media_type(self):
+        """Returns the media type of this file."""
         return self._raw.get('media_type')
 
     def get_id(self):
         return self._raw.get('id')
 
     def get_versions(self):
+        """Returns a list of versions (resolutions) of this file."""
         return [FileVersion(self.sdk, raw_data=version) for version in self._raw.get('versions', [])]
 
     def retrieve_presigned_url(self):
+        """Returns a presigned direct URL to this file.
+        The resulting URL can be accessed without authentication for a short amount of time (several minutes).
+        """
         return self.sdk.files.get_presigned_url_for(self.get_url())
 
 
 class FileVersion:
+    """Represents a specific version (resolution) of a file"""
     def __init__(self, sdk, raw_data=None):
         self.sdk = sdk
         self._raw = raw_data or {}
@@ -144,4 +189,7 @@ class FileVersion:
         return self._raw.get('height')
 
     def retrieve_presigned_url(self, sdk):
+        """Returns a presigned direct URL to this file.
+        The resulting URL can be accessed without authentication for a short amount of time (several minutes).
+        """
         return self.sdk.files.get_presigned_url_for(sdk, self.get_url())
