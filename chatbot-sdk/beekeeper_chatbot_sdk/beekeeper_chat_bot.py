@@ -20,6 +20,9 @@ class BeekeeperChatBot:
         self._handlers = []
 
     def start(self):
+        """Start this chat bot
+        The chat bot will start listening for incoming chat messages on a separate thread.
+        """
         config = self.sdk.api_client.get(CONFIG_API_ENDPOINT)
         self.user = User(self.sdk, config.get('user'))
 
@@ -37,14 +40,20 @@ class BeekeeperChatBot:
         self._pubnub.subscribe().channels(enc_channel.get('channel')).execute()
 
     def add_handler(self, handler):
+        """Add a handler to this bot which can handle messages received by it
+        :param handler: A handler object (has to implement AbstractHandler)"""
         if handler not in self._handlers:
             self._handlers.append(handler)
 
     def remove_handler(self, handler):
+        """Remove a handler from this bot
+        :param handler: A handler object"""
         if handler in self._handlers:
             self._handlers.remove(handler)
 
     def stop(self):
+        """Stop this chat bot (blocking)
+        """
         self._pubnub.unsubscribe_all().execute()
 
     def _on_message(self, message):

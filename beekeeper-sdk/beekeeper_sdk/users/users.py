@@ -1,3 +1,6 @@
+from typing import Iterator
+from typing import List
+
 from beekeeper_sdk.iterators import BeekeeperApiLimitOffsetIterator
 
 API_ENDPOINT = 'users'
@@ -36,7 +39,7 @@ class UserApi:
             offset=None,
             include_self=None,
             exclude_users_which_never_logged_in=None,
-    ):
+    ) -> List['User']:
         """Retrieve list of users from Beekeeper
 
         The first `limit` users in alphabetical order are returned, after list offset `offset`.
@@ -75,7 +78,7 @@ class UserApi:
             include_bots=None,
             include_self=None,
             exclude_users_which_never_logged_in=None,
-    ):
+    ) -> Iterator['User']:
         """Retrieve list of users from Beekeeper
 
         Returns an iterator over Beekeeper users in alphabetical order.
@@ -98,7 +101,7 @@ class UserApi:
             )
         return BeekeeperApiLimitOffsetIterator(call)
 
-    def get_user(self, user_id):
+    def get_user(self, user_id) -> 'User':
         """Retrieve the user with a given `user_id`
         :param user_id: ID of the user
         :return User object representing the user
@@ -106,7 +109,7 @@ class UserApi:
         response = self.sdk.api_client.get(API_ENDPOINT, user_id)
         return User(self.sdk, raw_data=response)
 
-    def get_user_by_username(self, username):
+    def get_user_by_username(self, username) -> 'User':
         """Retrieve the user with a given `username`
         :param username: Username of the user
         :return User object representing the user
@@ -114,7 +117,7 @@ class UserApi:
         response = self.sdk.api_client.get(API_ENDPOINT, 'by_name', username)
         return User(self.sdk, raw_data=response)
 
-    def get_user_by_tenantuserid(self, tenant_user_id):
+    def get_user_by_tenantuserid(self, tenant_user_id) -> 'User':
         """Retrieve the user with a given `tenant_user_id`
         :param tenant_user_id: ID of the user
         :return User object representing the user
@@ -136,19 +139,19 @@ class User:
         self.sdk = sdk
         self._raw = raw_data or {}
 
-    def get_id(self):
+    def get_id(self) -> str:
         """Returns the ID of the user"""
         return self._raw.get('id')
 
-    def get_suspended(self):
+    def get_suspended(self) -> bool:
         """Returns a boolean indicating whether this user is suspended"""
         return self._raw.get('suspended')
 
-    def get_display_name(self):
+    def get_display_name(self) -> str:
         """Returns the display name of this user"""
         return self._raw.get('display_name')
 
-    def get_is_bot(self):
+    def get_is_bot(self) -> bool:
         """Returns a boolean indicating whether this user is a bot"""
         return self._raw.get('is_bot')
 
@@ -159,27 +162,27 @@ class User:
     def get_role(self):
         return self._raw.get('role')
 
-    def get_email(self):
+    def get_email(self) -> str:
         """Returns the e-mail address of this user"""
         return self._raw.get('email')
 
-    def get_display_name_short(self):
+    def get_display_name_short(self) -> str:
         """Returns the short display name of this user"""
         return self._raw.get('display_name_short')
 
-    def get_profile(self):
+    def get_profile(self) -> str:
         """Returns the username of this user"""
         return self._raw.get('profile')
 
-    def get_firstname(self):
+    def get_firstname(self) -> str:
         """Returns the first name of this user"""
         return self._raw.get('firstname')
 
-    def get_lastname(self):
+    def get_lastname(self) -> str:
         """Returns the last name of this user"""
         return self._raw.get('lastname')
 
-    def get_name(self):
+    def get_name(self) -> str:
         """Returns the name of this user"""
         return self._raw.get('name')
 
@@ -195,11 +198,11 @@ class User:
         """Returns the gender of this user"""
         return self._raw.get('gender')
 
-    def get_avatar(self):
+    def get_avatar(self) -> str:
         """Returns the Avatar URL of this user"""
         return self._raw.get('avatar')
 
-    def get_custom_fields(self):
+    def get_custom_fields(self) -> List['CustomField']:
         """Returns the list of CustomField objects associated with this user"""
         return [CustomField(self.sdk, raw_data=customfield) for customfield in self._raw.get('custom_fields')]
 
@@ -210,7 +213,7 @@ class CustomField:
         self.sdk = sdk
         self._raw = raw_data or {}
 
-    def get_label(self):
+    def get_label(self) -> str:
         """Returns the label (name) of the profile field"""
         return self._raw.get('label')
 

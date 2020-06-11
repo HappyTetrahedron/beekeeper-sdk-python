@@ -1,3 +1,6 @@
+from typing import Iterator
+from typing import List
+
 from beekeeper_sdk.files import FileData
 
 from beekeeper_sdk.iterators import BeekeeperApiLimitAfterIterator
@@ -30,7 +33,7 @@ class ConversationApi:
     def __init__(self, sdk):
         self.sdk = sdk
 
-    def get_conversations(self, folder=None, limit=None, before=None):
+    def get_conversations(self, folder=None, limit=None, before=None) -> List['Conversation']:
         """Retrieve conversations from `folder`
 
         Retrieves the most recent `limit` conversations that are older than `before` from the `folder` folder.
@@ -49,7 +52,7 @@ class ConversationApi:
         response = self.sdk.api_client.get(API_ENDPOINT, query=query)
         return [Conversation(self.sdk, raw_data=conversation) for conversation in response]
 
-    def get_conversations_iterator(self, folder=None):
+    def get_conversations_iterator(self, folder=None) -> Iterator['Conversation']:
         """Retrieve conversations from `folder`
 
         Returns an iterator over conversations from the `folder` folder, from newest (most recently active) to oldest.
@@ -66,7 +69,7 @@ class ConversationApi:
             user_ids,
             group_image=None,
             conversation_type=CONVERSATION_TYPE_GROUP,
-    ):
+    ) -> 'Conversation':
         """Create a new conversation
 
         Creates a new conversation with the specified users
@@ -86,7 +89,7 @@ class ConversationApi:
         response = self.sdk.api_client.post(API_ENDPOINT, payload=new_conversation)
         return Conversation(self.sdk, response)
 
-    def get_conversation(self, conversation_id):
+    def get_conversation(self, conversation_id) -> 'Conversation':
         """Retrieve a conversation with a specific ID
 
         :param conversation_id: ID of the conversation to retrieve
@@ -95,7 +98,7 @@ class ConversationApi:
         response = self.sdk.api_client.get(API_ENDPOINT, conversation_id)
         return Conversation(self.sdk, raw_data=response)
 
-    def get_conversation_by_user(self, user_id):
+    def get_conversation_by_user(self, user_id) -> 'Conversation':
         """Retrieve a one-on-one conversation with a specific user
 
         The conversation will be created if it does not yet exist.
@@ -106,7 +109,7 @@ class ConversationApi:
         response = self.sdk.api_client.get(API_ENDPOINT, 'by_user', user_id)
         return Conversation(self.sdk, raw_data=response)
 
-    def send_message_to_conversation(self, conversation_id, message):
+    def send_message_to_conversation(self, conversation_id, message) -> 'ConversationMessage':
         """Send a message to the conversation with specified `conversation_id`
 
         :param conversation_id: ID of the conversation in which to send the message
@@ -130,7 +133,7 @@ class ConversationApi:
         response = self.sdk.api_client.post(API_ENDPOINT, conversation_id, 'leave')
         return response.get('status') == 'OK'
 
-    def archive_conversation(self, conversation_id):
+    def archive_conversation(self, conversation_id) -> 'Conversation':
         """Archive the conversation with specified `conversation_id`
 
         :param conversation_id: ID of the conversation to archive
@@ -139,7 +142,7 @@ class ConversationApi:
         response = self.sdk.api_client.post(API_ENDPOINT, conversation_id, 'archive')
         return Conversation(self.sdk, raw_data=response)
 
-    def un_archive_conversation(self, conversation_id):
+    def un_archive_conversation(self, conversation_id) -> 'Conversation':
         """Un-Archive the conversation with specified `conversation_id` (move to inbox)
 
         :param conversation_id: ID of the conversation to un-archive
@@ -148,7 +151,7 @@ class ConversationApi:
         response = self.sdk.api_client.delete(API_ENDPOINT, conversation_id, 'archive')
         return Conversation(self.sdk, raw_data=response)
 
-    def add_user_to_conversation(self, conversation_id, user_id, role=USER_ROLE_MEMBER):
+    def add_user_to_conversation(self, conversation_id, user_id, role=USER_ROLE_MEMBER) -> 'ConversationMember':
         """Add user with ID `user_id` to conversation with ID `conversation_id`
 
         :param conversation_id: ID of the conversation to which to add the user
@@ -169,7 +172,11 @@ class ConversationApi:
         response = self.sdk.api_client.delete(API_ENDPOINT, conversation_id, 'members', user_id)
         return response.get('status') == 'OK'
 
-    def get_members_of_conversation_iterator(self, conversation_id, include_suspended=False):
+    def get_members_of_conversation_iterator(
+            self,
+            conversation_id,
+            include_suspended=False
+    ) -> Iterator['ConversationMember']:
         """Retrieve members of conversation with ID `conversation_id`
 
         Returns an iterator over members in the conversation with ID `conversation_id` (in alphabetical order)
@@ -186,7 +193,13 @@ class ConversationApi:
             )
         return BeekeeperApiLimitOffsetIterator(call)
 
-    def get_members_of_conversation(self, conversation_id, include_suspended=None, limit=None, offset=None):
+    def get_members_of_conversation(
+            self,
+            conversation_id,
+            include_suspended=None,
+            limit=None,
+            offset=None
+    ) -> List['ConversationMember']:
         """Retrieve members of conversation with ID `conversation_id`
 
         Retrieves the first `limit` members (alphabetically) of the conversation `conversation_id` after an offset `offset`
@@ -206,7 +219,11 @@ class ConversationApi:
         response = self.sdk.api_client.get(API_ENDPOINT, conversation_id, 'members', query=query)
         return [ConversationMember(self.sdk, raw_data=member) for member in response]
 
-    def get_messages_of_conversation_iterator(self, conversation_id, reversed_order=False):
+    def get_messages_of_conversation_iterator(
+            self,
+            conversation_id,
+            reversed_order=False
+        ) -> Iterator['ConversationMessage']:
         """Retrieve messages of conversation with ID `conversation_id`
 
         :param conversation_id: ID of the conversation for which to get members
@@ -224,7 +241,14 @@ class ConversationApi:
             return self.get_messages_of_conversation(conversation_id, before=before, limit=limit)
         return BeekeeperApiLimitBeforeIterator(call, response_is_reversed=True)
 
-    def get_messages_of_conversation(self, conversation_id, after=None, before=None, limit=None, message_id=None):
+    def get_messages_of_conversation(
+            self,
+            conversation_id,
+            after=None,
+            before=None,
+            limit=None,
+            message_id=None
+    ) -> List['ConversationMessage']:
         """Retrieve messages of conversation with ID `conversation_id`
 
         Retrieves the most recent `limit` messages of the conversation `conversation_id`
@@ -298,15 +322,15 @@ class ConversationMessage:
     def _timestamp(self):
         return self.get_created()
 
-    def get_conversation_id(self):
+    def get_conversation_id(self) -> int:
         """Returns the ID of the conversation this message was sent in"""
         return self._raw.get('conversation_id')
 
-    def get_id(self):
+    def get_id(self) -> str:
         """Returns the ID of this message"""
         return self._raw.get('id')
 
-    def get_text(self):
+    def get_text(self) -> str:
         """Returns the text of this message"""
         return self._raw.get('text')
 
@@ -316,35 +340,35 @@ class ConversationMessage:
         """
         return self._raw.get('message_type')
 
-    def get_profile(self):
-        """Returns the profile of the sender of this message"""
+    def get_profile(self) -> str:
+        """Returns the username of the sender of this message"""
         return self._raw.get('profile')
 
-    def get_user_id(self):
+    def get_user_id(self) -> str:
         """Returns the user ID of the sender of this message"""
         return self._raw.get('user_id')
 
-    def get_name(self):
+    def get_name(self) -> str:
         """Returns the name of the sender of this message"""
         return self._raw.get('name')
 
-    def get_created(self):
+    def get_created(self) -> str:
         """Returns the timestamp of this message's creation"""
         return self._raw.get('created')
 
-    def get_files(self):
+    def get_files(self) -> List['FileData']:
         """Returns a list of FileData objects attached to this message as files"""
         return [FileData(self.sdk, raw_data=file) for file in self._raw.get('files', [])]
 
-    def get_media(self):
+    def get_media(self) -> List['FileData']:
         """Returns a list of FileData objects attached to this message as media"""
         return [FileData(self.sdk, raw_data=file) for file in self._raw.get('media', [])]
 
-    def get_addons(self):
+    def get_addons(self) -> List['ConversationMessageAddon']:
         """Returns a list of ConversationMessageAddon objects attached to this message"""
         return [ConversationMessageAddon(self.sdk, raw_data=addon) for addon in self._raw.get('addons', [])]
 
-    def reply(self, message):
+    def reply(self, message) -> 'ConversationMessage':
         """Send a message to the same conversation this message comes from
         :param message: ConversationMessage object representing the message to be sent, or string
         """
@@ -364,33 +388,33 @@ class Conversation:
         """Returns the conversation type. One of `CONVERSATION_TYPE_GROUP`, `CONVERSATION_TYPE_ONE_ON_ONE`"""
         return self._raw.get('conversation_type')
 
-    def get_id(self):
+    def get_id(self) -> int:
         """Returns the ID of this conversation"""
         return self._raw.get('id')
 
-    def get_name(self):
+    def get_name(self) -> str:
         """Returns the name this conversation"""
         return self._raw.get('name')
 
-    def get_snippet(self):
+    def get_snippet(self) -> str:
         """Returns the snippet (short excerpt of most recent message) of this conversation"""
         return self._raw.get('snippet')
 
-    def get_profile(self):
+    def get_profile(self) -> str:
         return self._raw.get('profile')
 
-    def get_modified(self):
+    def get_modified(self) -> str:
         """Returns the timestamp at which this conversation was last modified"""
         return self._raw.get('modified')
 
-    def get_is_admin(self):
+    def get_is_admin(self) -> bool:
         """Returns true if the BeekeeperSDK has admin rights in this conversation"""
         return self._raw.get('is_admin')
 
-    def get_avatar(self):
+    def get_avatar(self) -> str:
         return self._raw.get('avatar')
 
-    def get_user_id(self):
+    def get_user_id(self) -> str:
         """Returns the ID of the user this conversation is with (only for `CONVERSATION_TYPE_ONE_ON_ONE`)"""
         return self._raw.get('user_id')
 
@@ -400,13 +424,13 @@ class Conversation:
         """
         return self._raw.get('folder')
 
-    def send_message(self, message):
+    def send_message(self, message) -> 'Conversation':
         """Sends a message to this conversation
         :param message: ConversationMessage object representing the message to be sent, or string
         """
         return self.sdk.conversations.send_message_to_conversation(self.get_id(), message)
 
-    def change_name(self, new_name):
+    def change_name(self, new_name) -> 'Conversation':
         """Change the name of this conversation
 
         Requires admin rights within this conversation
@@ -415,7 +439,7 @@ class Conversation:
         self._raw['name'] = new_name
         return self._save()
 
-    def change_avatar(self, new_avatar):
+    def change_avatar(self, new_avatar) -> 'Conversation':
         self._raw['avatar'] = new_avatar
         return self._save()
 
@@ -423,15 +447,15 @@ class Conversation:
         """Leave this conversation"""
         return self.sdk.conversations.leave_conversation(self.get_id())
 
-    def archive(self):
+    def archive(self) -> 'Conversation':
         """Move this conversation to the "Archive" folder"""
         return self.sdk.conversations.archive_conversation(self.get_id())
 
-    def un_archive(self):
+    def un_archive(self) -> 'Conversation':
         """Move this conversation to the "Inbox" folder"""
         return self.sdk.conversations.un_archive_conversation(self.get_id())
 
-    def add_user(self, user_id, role=USER_ROLE_MEMBER):
+    def add_user(self, user_id, role=USER_ROLE_MEMBER) -> 'ConversationMember':
         """Add user with ID `user_id` to this conversation
 
         :param user_id: ID of the user which is to be added to the conversation
@@ -447,7 +471,7 @@ class Conversation:
         """
         return self.sdk.conversations.remove_user_from_conversation(self.get_id(), user_id)
 
-    def retrieve_members(self, include_suspended=None, limit=None, offset=None):
+    def retrieve_members(self, include_suspended=None, limit=None, offset=None) -> List['ConversationMember']:
         """Retrieve members of this conversation from the API
 
         Retrieves the first `limit` members (alphabetically) of this conversation after an offset `offset`
@@ -458,7 +482,7 @@ class Conversation:
         """
         return self.sdk.conversations.get_members_of_conversation(self.get_id(), include_suspended, limit, offset)
 
-    def retrieve_messages(self, after=None, before=None, limit=None, message_id=None):
+    def retrieve_messages(self, after=None, before=None, limit=None, message_id=None) -> List['ConversationMessage']:
         """Retrieve messages of this conversation from the API
 
         Retrieves the most recent `limit` messages of this conversation
@@ -476,7 +500,7 @@ class Conversation:
         """
         return self.sdk.conversations.get_messages_of_conversation(self.get_id(), after, before, limit, message_id)
 
-    def retrieve_members_iterator(self, include_suspended=None):
+    def retrieve_members_iterator(self, include_suspended=None) -> Iterator['ConversationMember']:
         """Retrieve members of this conversation from the API
 
         Returns an iterator over members in this conversation  (in alphabetical order)
@@ -485,7 +509,7 @@ class Conversation:
         """
         return self.sdk.conversations.get_members_of_conversation_iterator(self.get_id(), include_suspended)
 
-    def retrieve_messages_iterator(self, reversed_order=False):
+    def retrieve_messages_iterator(self, reversed_order=False) -> Iterator['ConversationMessage']:
         """Retrieve messages of this conversation from the API
 
         :param reversed_order: Boolean indicating whether the order of messages should be reversed
@@ -498,7 +522,7 @@ class Conversation:
             reversed_order=reversed_order
         )
 
-    def _save(self):
+    def _save(self) -> 'Conversation':
         response = self.sdk.api_client.put(
             API_ENDPOINT,
             self.get_id(),
@@ -518,23 +542,23 @@ class ConversationMember:
         """Returns the role of this member in this conversation. One of `USER_ROLE_MEMBER`, `USER_ROLE_ADMIN`"""
         return self._raw.get('role')
 
-    def get_name(self):
+    def get_name(self) -> str:
         """Returns the name of this conversation member"""
         return self._raw.get('user', {}).get('name')
 
-    def get_display_name(self):
+    def get_display_name(self) -> str:
         """Returns the display name of this conversation member"""
         return self._raw.get('user', {}).get('display_name')
 
-    def get_id(self):
+    def get_id(self) -> str:
         """Returns the ID of the user represented by this ConversationMember"""
         return self._raw.get('user', {}).get('id')
 
-    def get_suspended(self):
+    def get_suspended(self) -> bool:
         """Returns true if this conversation member is suspended"""
         return self._raw.get('user', {}).get('suspended')
 
-    def get_avatar(self):
+    def get_avatar(self) -> str:
         """Returns the avatar of this conversation member"""
         return self._raw.get('user', {}).get('avatar')
 
@@ -547,11 +571,11 @@ class ConversationMessageInfo:
         self.sdk = sdk
         self._raw = raw_data or {}
 
-    def get_message(self):
+    def get_message(self) -> 'ConversationMessage':
         """Returns the message this information pertains to"""
         return ConversationMessage(self.sdk, raw_data=self._raw.get('message'))
 
-    def get_message_receipts(self):
+    def get_message_receipts(self) -> List['ConversationMessageReceipt']:
         """Returns the message receipts for this message"""
         return [ConversationMessageReceipt(self.sdk, raw_data=receipt)
                 for receipt in self._raw.get('message_receipts', [])]
@@ -565,14 +589,14 @@ class ConversationMessageReceipt:
         self.sdk = sdk
         self._raw = raw_data or {}
 
-    def get_id(self):
+    def get_id(self) -> str:
         return self._raw.get('id')
 
-    def get_user_id(self):
+    def get_user_id(self) -> str:
         """Returns the ID of the user this receipt pertains to"""
         return self._raw.get('user_id')
 
-    def get_message_id(self):
+    def get_message_id(self) -> str:
         """Returns the ID of the message this receipt pertains to"""
         return self._raw.get('message_id')
 
@@ -588,15 +612,15 @@ class ConversationMessageReceipt:
     def get_created(self):
         return self._raw.get('created')
 
-    def get_user_name(self):
+    def get_user_name(self) -> str:
         """Returns the name of the user"""
         return self._raw.get('user', {}).get('name')
 
-    def get_user_display_name(self):
+    def get_user_display_name(self) -> str:
         """Returns the display name of the user"""
         return self._raw.get('user', {}).get('display_name')
 
-    def get_user_avatar(self):
+    def get_user_avatar(self) -> str:
         return self._raw.get('user', {}).get('avatar')
 
 
@@ -610,7 +634,7 @@ class ConversationMessageAddon:
         """Returns the type of the addon"""
         return self._raw.get('addon_type')
 
-    def get_id(self):
+    def get_id(self) -> str:
         return self._raw.get('uuid')
 
     # TODO add representations for concrete addon types

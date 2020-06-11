@@ -1,3 +1,6 @@
+from typing import Iterator
+from typing import List
+
 from beekeeper_sdk.iterators import BeekeeperApiLimitOffsetIterator
 
 API_ENDPOINT = 'profiles'
@@ -16,7 +19,7 @@ class ProfileApi:
             include_bots=None,
             limit=None,
             offset=None,
-    ):
+    ) -> List['Profile']:
         """Retrieve list of profiles from Beekeeper
 
         The first `limit` profiles in alphabetical order are returned, after list offset `offset`.
@@ -39,7 +42,7 @@ class ProfileApi:
         response = self.sdk.api_client.get(API_ENDPOINT, query=query)
         return [Profile(self.sdk, raw_data=user) for user in response]
 
-    def get_profiles_iterator(self, include_bots=None):
+    def get_profiles_iterator(self, include_bots=None) -> Iterator['Profile']:
         """Retrieve list of profiles from Beekeeper
 
          Returns an iterator over Beekeeper profiles in alphabetical order.
@@ -52,7 +55,7 @@ class ProfileApi:
             return self.get_profiles(include_bots=include_bots, offset=offset, limit=limit)
         return BeekeeperApiLimitOffsetIterator(call)
 
-    def get_profile(self, user_id, include_totals=False):
+    def get_profile(self, user_id, include_totals=False) -> 'Profile':
         """Retrieve the profile of an user with a given `user_id`
         :param user_id: ID of the user whose profile to retrieve
         :param include_totals: Whether to include information of this user's total Likes, Posts and Comments written
@@ -65,7 +68,7 @@ class ProfileApi:
         response = self.sdk.api_client.get(API_ENDPOINT, user_id, query=query)
         return Profile(self.sdk, raw_data=response.get('user'))
 
-    def get_profile_by_username(self, username, include_totals=False):
+    def get_profile_by_username(self, username, include_totals=False) -> 'Profile':
         """Retrieve the profile of an user with a given `username`
         :param username: ID of the user whose profile to retrieve
         :param include_totals: Whether to include information of this user's total Likes, Posts and Comments written
@@ -82,37 +85,37 @@ class Profile:
         self.sdk = sdk
         self._raw = raw_data or {}
 
-    def get_id(self):
+    def get_id(self) -> str:
         """Returns the ID of the user"""
         return self._raw.get('id')
 
-    def get_display_name(self):
+    def get_display_name(self) -> str:
         """Returns the display name of the user"""
         return self._raw.get('display_name')
 
-    def get_is_bot(self):
+    def get_is_bot(self) -> bool:
         """Returns a boolean indicating whether this user is a bot"""
         return self._raw.get('is_bot')
 
-    def get_profile(self):
+    def get_profile(self) -> str:
         """Returns the username of this user"""
         return self._raw.get('profile')
 
-    def get_firstname(self):
+    def get_firstname(self) -> str:
         """Returns the first name of this user"""
         return self._raw.get('firstname')
 
-    def get_lastname(self):
+    def get_lastname(self) -> str:
         """Returns the last name of this user"""
         return self._raw.get('lastname')
 
     def get_role(self):
         return self._raw.get('role')
 
-    def get_name(self):
+    def get_name(self) -> str:
         """Returns the name of this user"""
         return self._raw.get('name')
 
-    def get_avatar(self):
+    def get_avatar(self) -> str:
         """Returns the Avatar URL of this user"""
         return self._raw.get('avatar')

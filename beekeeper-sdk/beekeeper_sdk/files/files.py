@@ -1,3 +1,5 @@
+from typing import List
+
 import requests
 from xml.etree import ElementTree
 import magic
@@ -38,7 +40,7 @@ class FileApi:
     def __init__(self, sdk):
         self.sdk = sdk
 
-    def upload_photo_from_path(self, file_path):
+    def upload_photo_from_path(self, file_path) -> 'FileData':
         """Uploads an image file to Beekeeper given a local file path
 
         The file is uploaded as a photo suitable to be used e.g. as post or message images
@@ -47,7 +49,7 @@ class FileApi:
         """
         return self.sdk.files.upload_file_from_path(file_path, upload_type=FILE_UPLOAD_TYPE_PHOTO)
 
-    def upload_photo(self, file, mime_type=None, file_name=None):
+    def upload_photo(self, file, mime_type=None, file_name=None) -> 'FileData':
         """Uploads an image file to Beekeeper given a File object
 
         The file is uploaded as a photo suitable to be used e.g. as post or message attachments
@@ -58,7 +60,7 @@ class FileApi:
         """
         return self.upload_file(file, mime_type=mime_type, file_name=file_name, upload_type=FILE_UPLOAD_TYPE_PHOTO)
 
-    def upload_file_from_path(self, file_path, upload_type=FILE_UPLOAD_TYPE_FILE):
+    def upload_file_from_path(self, file_path, upload_type=FILE_UPLOAD_TYPE_FILE) -> 'FileData':
         """Uploads an image file to Beekeeper given a local file path
 
         :param file_path: Path of the image file
@@ -71,7 +73,7 @@ class FileApi:
         with open(file_path, 'rb') as file:
             return self.upload_file(file, upload_type=upload_type, mime_type=mime_type, file_name=file_name)
 
-    def upload_file(self, file, upload_type=FILE_UPLOAD_TYPE_FILE, mime_type=None, file_name=None):
+    def upload_file(self, file, upload_type=FILE_UPLOAD_TYPE_FILE, mime_type=None, file_name=None) -> 'FileData':
         """Uploads a file to Beekeeper given a File object
 
         :param file: File containing the image data
@@ -122,7 +124,7 @@ class FileApi:
             else:
                 raise ValueError("Did not receive expected content type for file upload")
 
-    def get_presigned_url_for(self, file_url):
+    def get_presigned_url_for(self, file_url) -> str:
         """Given the URL to a file inside Beekeeper, returns a presigned direct URL to that file.
         The resulting URL can be accessed without authentication for a short amount of time (several minutes).
         """
@@ -136,34 +138,34 @@ class FileData:
         self.sdk = sdk
         self._raw = raw_data or {}
 
-    def get_name(self):
+    def get_name(self) -> str:
         """Returns the name of the file"""
         return self._raw.get('name')
 
-    def get_url(self):
+    def get_url(self) -> str:
         """Returns the URL at which to access the file.
         The file can only be accessed at this URL by authenticated users.
         """
         return self._raw.get('url')
 
-    def get_key(self):
+    def get_key(self) -> str:
         return self._raw.get('key')
 
-    def get_userid(self):
+    def get_userid(self) -> str:
         return self._raw.get('userid')
 
-    def get_media_type(self):
+    def get_media_type(self) -> str:
         """Returns the media type of this file."""
         return self._raw.get('media_type')
 
-    def get_id(self):
+    def get_id(self) -> str:
         return self._raw.get('id')
 
-    def get_versions(self):
+    def get_versions(self) -> List['FileVersion']:
         """Returns a list of versions (resolutions) of this file."""
         return [FileVersion(self.sdk, raw_data=version) for version in self._raw.get('versions', [])]
 
-    def retrieve_presigned_url(self):
+    def retrieve_presigned_url(self) -> str:
         """Returns a presigned direct URL to this file.
         The resulting URL can be accessed without authentication for a short amount of time (several minutes).
         """
@@ -188,7 +190,7 @@ class FileVersion:
     def get_height(self):
         return self._raw.get('height')
 
-    def retrieve_presigned_url(self, sdk):
+    def retrieve_presigned_url(self, sdk) -> str:
         """Returns a presigned direct URL to this file.
         The resulting URL can be accessed without authentication for a short amount of time (several minutes).
         """
