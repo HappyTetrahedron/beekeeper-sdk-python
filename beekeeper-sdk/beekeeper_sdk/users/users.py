@@ -131,6 +131,13 @@ class UserApi:
         """
         response = self.sdk.api_client.delete(API_ENDPOINT, user_id)
         return response.get('status') == 'OK'
+    
+    def generate_quicklogin_for_user(self, user_id) -> 'QuickLoginToken':
+        """Create a quick-login for user `user_id`
+        :param user_id: ID of the user for which to create a quicklogin
+        """
+        response = self.sdk.api_client.post("tokens", user_id)
+        return QuickLoginToken(self.sdk, raw_data=response)
 
 
 class User:
@@ -206,6 +213,10 @@ class User:
         """Returns the list of CustomField objects associated with this user"""
         return [CustomField(self.sdk, raw_data=customfield) for customfield in self._raw.get('custom_fields')]
 
+    def generate_quicklogin(self) -> 'QuickLoginToken':
+        """Generates a quicklogin for this user"""
+        return self.sdk.users.generate_quicklogin_for_user(self.get_id())
+
 
 class CustomField:
     """Representation of a custom profile field of a specific user"""
@@ -228,3 +239,26 @@ class CustomField:
     def get_type(self):
         """Returns the type of this profile field"""
         return self._raw.get('type')
+
+
+class QuickLoginToken:
+    """Representation of a quick login for a specific user"""
+    def __init__(self, sdk, raw_data=None):
+        self.sdk = sdk
+        self._raw = raw_data or {}
+
+    def get_url(self) -> str:
+        """Returns the URL used to quick-login to the user account"""
+        return self._raw.get('url')
+
+    def get_qr_url(self) -> str:
+        """Returns the URL of the generated QR code which can be used to quick-login to the user account"""
+        return self._raw.get('qr_url')
+
+    def get_token(self) -> str:
+        """Returns the login token associated with this quick-login"""
+        return self._raw.get('token')
+
+    def get_expiration(self) -> str:
+        """Returns the expiration timestamp of this quick-login"""
+        return self._raw.get('expiration')
