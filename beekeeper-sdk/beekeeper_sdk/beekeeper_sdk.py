@@ -4,6 +4,7 @@ from .files.files import FileApi
 from .profiles.profiles import ProfileApi
 from .streams.streams import StreamApi
 from .users.users import UserApi
+from .status.status import StatusApi
 
 
 class BeekeeperSDK:
@@ -16,3 +17,4 @@ class BeekeeperSDK:
         self.streams = StreamApi(self)
         self.profiles = ProfileApi(self)
         self.users = UserApi(self)
+        self.status = StatusApi(self)

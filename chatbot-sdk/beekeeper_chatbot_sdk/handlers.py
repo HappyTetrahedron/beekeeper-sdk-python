@@ -3,6 +3,8 @@ from abc import ABC
 from abc import abstractmethod
 
 from beekeeper_sdk.conversations import MESSAGE_TYPE_REGULAR
+from beekeeper_sdk.conversations import ConversationMessage
+from beekeeper_sdk.status import Status
 
 
 class AbstractHandler(ABC):
@@ -36,10 +38,11 @@ class CommandHandler(AbstractHandler):
         self.callback_function = callback_function
 
     def matches(self, message) -> bool:
-        if message.get_type() in self.message_types:
-            if message.get_text():
-                if message.get_text().startswith("/{}".format(self.command)):
-                    return True
+        if isinstance(message, ConversationMessage):
+            if message.get_type() in self.message_types:
+                if message.get_text():
+                    if message.get_text().startswith("/{}".format(self.command)):
+                        return True
         return False
 
     def handle(self, bot, message):
@@ -60,10 +63,11 @@ class RegexHandler(AbstractHandler):
         self.callback_function = callback_function
 
     def matches(self, message) -> bool:
-        if message.get_type() in self.message_types:
-            if message.get_text():
-                if self.regex.search(message.get_text()):
-                    return True
+        if isinstance(message, ConversationMessage):
+            if message.get_type() in self.message_types:
+                if message.get_text():
+                    if self.regex.search(message.get_text()):
+                        return True
         return False
 
     def handle(self, bot, message):
@@ -82,7 +86,26 @@ class MessageHandler(AbstractHandler):
         self.callback_function = callback_function
 
     def matches(self, message) -> bool:
-        if message.get_type() in self.message_types:
+        if isinstance(message, ConversationMessage):
+            if message.get_type() in self.message_types:
+                return True
+        return False
+
+    def handle(self, bot, message):
+        self.callback_function(bot, message)
+
+
+class StatusUpdateHandler(AbstractHandler):
+    """A handler that responds to status changes"""
+    def __init__(self, callback_function):
+        """
+        :param callback_function: The function to call when a status update is received.
+        The callback function is passed the BeekeeperChatBot and beekeeper_sdk.status.Status as arguments
+        """
+        self.callback_function = callback_function
+
+    def matches(self, status) -> bool:
+        if isinstance(status, Status):
             return True
         return False
 

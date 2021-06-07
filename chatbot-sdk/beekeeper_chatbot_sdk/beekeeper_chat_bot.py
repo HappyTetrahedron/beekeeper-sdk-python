@@ -61,3 +61,9 @@ class BeekeeperChatBot:
             if handler.matches(message):
                 handler.handle(self, message)
                 return
+
+    def _on_status_change(self, status):
+        for handler in self._handlers:
+            if handler.matches(status):
+                handler.handle(self, status)
+                return
